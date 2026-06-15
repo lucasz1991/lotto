@@ -101,6 +101,8 @@ class LotteryRecommendationTest extends TestCase
         $defaultRecommendations = app(LotteryRecommendationService::class)->recommendations();
 
         $this->assertSame(LotteryRecommendationService::METHOD_RARE, $defaultRecommendations[LotteryDraw::GAME_LOTTO_6AUS49]['method']);
+        $this->assertCount(1, $defaultRecommendations[LotteryDraw::GAME_LOTTO_6AUS49]['rows']);
+        $this->assertCount(49, $defaultRecommendations[LotteryDraw::GAME_LOTTO_6AUS49]['main_stats']);
 
         $recommendations = app(LotteryRecommendationService::class)->recommendationsForGames([
             LotteryDraw::GAME_LOTTO_6AUS49 => [

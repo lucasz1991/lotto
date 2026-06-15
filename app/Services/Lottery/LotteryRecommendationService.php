@@ -21,7 +21,7 @@ class LotteryRecommendationService
     {
         $method = $this->normalizeMethod($options['method'] ?? self::METHOD_RARE);
         $rowCount = $this->clampInt($options['row_count'] ?? 1, 1, 10);
-        $statsLimit = $this->clampInt($options['stats_limit'] ?? 12, 5, 50);
+        $statsLimit = $this->clampInt($options['stats_limit'] ?? 50, 5, 50);
 
         return [
             LotteryDraw::GAME_LOTTO_6AUS49 => $this->buildForGame(
@@ -67,8 +67,8 @@ class LotteryRecommendationService
             ->mapWithKeys(fn (string $game): array => [
                 $game => [
                     'method' => self::METHOD_RARE,
-                    'row_count' => 3,
-                    'stats_limit' => 12,
+                    'row_count' => 1,
+                    'stats_limit' => 50,
                 ],
             ])
             ->all();
