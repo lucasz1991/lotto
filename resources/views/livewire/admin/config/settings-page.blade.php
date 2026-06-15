@@ -65,6 +65,56 @@
                     </p>
                 </div>
 
+                <div class="rounded-lg border border-gray-200 bg-gray-50 p-5">
+                    <div class="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                            <h3 class="text-base font-semibold text-gray-900">Automatische Abfrage</h3>
+                            <p class="mt-1 text-sm text-gray-500">
+                                Legt fest, wann der Laravel Scheduler die aktuellen Ziehungsdaten abfragt.
+                            </p>
+                        </div>
+                        <label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-700">
+                            <input
+                                type="checkbox"
+                                wire:model.defer="scrapingScheduleEnabled"
+                                class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500"
+                            >
+                            Aktiv
+                        </label>
+                    </div>
+
+                    <div class="mt-5 grid gap-5 lg:grid-cols-[220px_1fr]">
+                        <label class="block">
+                            <span class="text-sm font-semibold text-gray-700">Uhrzeit</span>
+                            <input
+                                type="time"
+                                wire:model.defer="scrapingScheduleTime"
+                                class="mt-2 block w-full rounded-md border border-gray-300 bg-white p-3 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            >
+                            @error('scrapingScheduleTime') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                        </label>
+
+                        <div>
+                            <p class="text-sm font-semibold text-gray-700">Wochentage</p>
+                            <div class="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                                @foreach ($weekdayLabels as $day => $label)
+                                    <label class="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm">
+                                        <input
+                                            type="checkbox"
+                                            value="{{ $day }}"
+                                            wire:model.defer="scrapingScheduleWeekdays"
+                                            class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500"
+                                        >
+                                        {{ $label }}
+                                    </label>
+                                @endforeach
+                            </div>
+                            @error('scrapingScheduleWeekdays') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                            @error('scrapingScheduleWeekdays.*') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+                </div>
+
                 <div class="grid gap-6 xl:grid-cols-2">
                     <div class="rounded-lg border border-gray-200 bg-gray-50 p-5">
                         <h3 class="text-base font-semibold text-gray-900">Lotto 6aus49</h3>

@@ -8,6 +8,7 @@ use App\Models\LotteryImport;
 use App\Models\Setting;
 use App\Services\Lottery\LotteryCsvImportService;
 use App\Services\Lottery\LotteryDrawScrapingService;
+use App\Services\Lottery\LotteryScrapingSchedule;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -29,9 +30,15 @@ class SettingsPage extends Component
 
     public string $euroJackpotScrapingUrl = '';
 
+    public bool $scrapingScheduleEnabled = true;
+
+    public string $scrapingScheduleTime = LotteryScrapingSchedule::DEFAULT_TIME;
+
+    public array $scrapingScheduleWeekdays = LotteryScrapingSchedule::DEFAULT_WEEKDAYS;
+
     public function mount(): void
     {
-        $this->loadGameSettings();
+        $this->loadGameSettings(app(LotteryScrapingSchedule::class));
     }
 
     public function switchTab(string $tab): void
@@ -144,16 +151,22 @@ class SettingsPage extends Component
             'drawCount' => LotteryDraw::query()->count(),
             'latestImports' => LotteryImport::query()->latest()->limit(8)->get(),
             'gameLabels' => LotteryDraw::gameLabels(),
+            'weekdayLabels' => app(LotteryScrapingSchedule::class)->weekdayLabels(),
         ])->layout('layouts.master');
     }
 
-    protected function loadGameSettings(): void
+    protected function loadGameSettings(LotteryScrapingSchedule $schedule): void
     {
         $settings = Setting::getValue('lottery', 'games');
         $settings = is_array($settings) ? $settings : [];
 
         $this->lottoScrapingUrl = trim((string) ($settings[LotteryDraw::GAME_LOTTO_6AUS49]['scraping_url'] ?? LotteryDrawScrapingService::DEFAULT_URLS[LotteryDraw::GAME_LOTTO_6AUS49]));
         $this->euroJackpotScrapingUrl = trim((string) ($settings[LotteryDraw::GAME_EUROJACKPOT]['scraping_url'] ?? LotteryDrawScrapingService::DEFAULT_URLS[LotteryDraw::GAME_EUROJACKPOT]));
+
+        $scheduleSettings = $schedule->settings();
+        $this->scrapingScheduleEnabled = (bool) $scheduleSettings['enabled'];
+        $this->scrapingScheduleTime = $scheduleSettings['time'];
+        $this->scrapingScheduleWeekdays = array_map('strval', $scheduleSettings['weekdays']);
     }
 
     protected function persistGameSettings(): void
@@ -161,6 +174,10 @@ class SettingsPage extends Component
         $validated = $this->validate([
             'lottoScrapingUrl' => ['nullable', 'url', 'max:2048'],
             'euroJackpotScrapingUrl' => ['nullable', 'url', 'max:2048'],
+            'scrapingScheduleEnabled' => ['boolean'],
+            'scrapingScheduleTime' => ['required', 'date_format:H:i'],
+            'scrapingScheduleWeekdays' => ['required', 'array', 'min:1'],
+            'scrapingScheduleWeekdays.*' => ['integer', 'between:0,6'],
         ]);
 
         Setting::setValue('lottery', 'games', [
@@ -171,6 +188,12 @@ class SettingsPage extends Component
                 'scraping_url' => trim((string) $validated['euroJackpotScrapingUrl']),
             ],
         ]);
+
+        app(LotteryScrapingSchedule::class)->save(
+            enabled: (bool) $validated['scrapingScheduleEnabled'],
+            time: $validated['scrapingScheduleTime'],
+            weekdays: $validated['scrapingScheduleWeekdays'],
+        );
     }
 
     protected function scrapingUrlFor(string $game): string

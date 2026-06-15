@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Services\Lottery\LotteryScrapingSchedule;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -12,8 +13,15 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
+        $scrapingSchedule = app(LotteryScrapingSchedule::class)->settings();
+
+        if (! $scrapingSchedule['enabled']) {
+            return;
+        }
+
         $schedule->command('lottery:scrape-current')
-            ->dailyAt('07:15')
+            ->dailyAt($scrapingSchedule['time'])
+            ->days($scrapingSchedule['weekdays'])
             ->timezone(config('app.timezone'))
             ->withoutOverlapping();
     }
