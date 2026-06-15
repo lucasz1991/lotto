@@ -91,20 +91,6 @@
                     </div>
                 @else
                     <div class="space-y-6 px-4 py-5 sm:px-5">
-                        <div class="grid gap-3 sm:grid-cols-3">
-                            <div class="rounded-md border border-gray-200 px-4 py-3">
-                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Auswertung</p>
-                                <p class="mt-1 text-sm font-semibold text-gray-900">{{ $recommendation['method_label'] }}</p>
-                            </div>
-                            <div class="rounded-md border border-gray-200 px-4 py-3">
-                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Vertrauen</p>
-                                <p class="mt-1 text-sm font-semibold text-gray-900">{{ $recommendation['confidence'] }}</p>
-                            </div>
-                            <div class="rounded-md border border-gray-200 px-4 py-3">
-                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Felder</p>
-                                <p class="mt-1 text-sm font-semibold text-gray-900">{{ count($recommendation['rows']) }}</p>
-                            </div>
-                        </div>
 
                         <div>
                             <div class="flex items-center justify-between gap-3">
