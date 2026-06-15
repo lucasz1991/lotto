@@ -12,7 +12,10 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        //
+        $schedule->command('lottery:scrape-current')
+            ->dailyAt('07:15')
+            ->timezone(config('app.timezone'))
+            ->withoutOverlapping();
     }
 
     /**

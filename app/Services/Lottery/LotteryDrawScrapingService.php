@@ -125,24 +125,34 @@ class LotteryDrawScrapingService
 
     protected function storeParsedData(string $game, string $sourceUrl, array $parsed, array $rawData): LotteryDraw
     {
-        return LotteryDraw::query()->updateOrCreate(
-            [
-                'game' => $game,
-                'draw_date' => $parsed['draw_date'],
-            ],
-            [
-                'draw_identifier' => $parsed['draw_date'],
-                'numbers' => $parsed['numbers'],
-                'bonus_numbers' => $parsed['bonus_numbers'],
-                'stake_cents' => $parsed['stake_cents'] ?? null,
-                'prize_classes' => $parsed['prize_classes'] ?? null,
-                'source_file' => $sourceUrl,
-                'raw_data' => array_merge([
-                    'url' => $sourceUrl,
-                    'parsed_at' => now()->toIso8601String(),
-                ], $rawData),
-            ]
-        );
+        $attributes = [
+            'draw_identifier' => $parsed['draw_date'],
+            'numbers' => $parsed['numbers'],
+            'bonus_numbers' => $parsed['bonus_numbers'],
+            'stake_cents' => $parsed['stake_cents'] ?? null,
+            'prize_classes' => $parsed['prize_classes'] ?? null,
+            'source_file' => $sourceUrl,
+            'raw_data' => array_merge([
+                'url' => $sourceUrl,
+                'parsed_at' => now()->toIso8601String(),
+            ], $rawData),
+        ];
+
+        $draw = LotteryDraw::query()
+            ->where('game', $game)
+            ->whereDate('draw_date', $parsed['draw_date'])
+            ->first();
+
+        if ($draw) {
+            $draw->forceFill($attributes)->save();
+
+            return $draw->refresh();
+        }
+
+        return LotteryDraw::query()->create(array_merge([
+            'game' => $game,
+            'draw_date' => $parsed['draw_date'],
+        ], $attributes));
     }
 
     public function parse(string $game, string $content): array

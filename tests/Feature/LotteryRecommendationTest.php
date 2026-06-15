@@ -50,4 +50,34 @@ class LotteryRecommendationTest extends TestCase
         $this->assertContains(1, $recommendations[LotteryDraw::GAME_EUROJACKPOT]['main_numbers']);
         $this->assertContains(1, $recommendations[LotteryDraw::GAME_EUROJACKPOT]['bonus_numbers']);
     }
+
+    public function test_recommendations_can_use_overdue_method_and_multiple_rows(): void
+    {
+        LotteryDraw::query()->create([
+            'game' => LotteryDraw::GAME_LOTTO_6AUS49,
+            'draw_date' => '2026-06-01',
+            'numbers' => [1, 2, 3, 4, 5, 6],
+            'bonus_numbers' => ['superzahl' => 1],
+        ]);
+        LotteryDraw::query()->create([
+            'game' => LotteryDraw::GAME_LOTTO_6AUS49,
+            'draw_date' => '2026-06-08',
+            'numbers' => [7, 8, 9, 10, 11, 12],
+            'bonus_numbers' => ['superzahl' => 2],
+        ]);
+
+        $recommendations = app(LotteryRecommendationService::class)->recommendations([
+            'method' => LotteryRecommendationService::METHOD_OVERDUE,
+            'row_count' => 3,
+            'stats_limit' => 20,
+        ]);
+
+        $lotto = $recommendations[LotteryDraw::GAME_LOTTO_6AUS49];
+
+        $this->assertSame(LotteryRecommendationService::METHOD_OVERDUE, $lotto['method']);
+        $this->assertCount(3, $lotto['rows']);
+        $this->assertCount(6, $lotto['rows'][0]['main_numbers']);
+        $this->assertGreaterThanOrEqual(13, min($lotto['rows'][0]['main_numbers']));
+        $this->assertSame(2, $lotto['main_stats'][0]['missed_draws']);
+    }
 }

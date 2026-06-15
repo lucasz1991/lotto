@@ -70,6 +70,29 @@ class LotteryDrawScrapingTest extends TestCase
         $this->assertSame('2026-06-13', $draw->draw_date->toDateString());
     }
 
+    public function test_same_draw_from_different_sources_updates_existing_entry(): void
+    {
+        Http::fake([
+            'https://example.test/lotto-a' => Http::response('Ziehung vom 13.06.2026 Gewinnzahlen 1 2 3 4 5 6 Superzahl 0'),
+            'https://example.test/lotto-b' => Http::response('Ziehung vom 13.06.2026 Gewinnzahlen 7 8 9 10 11 12 Superzahl 9'),
+        ]);
+
+        app(LotteryDrawScrapingService::class)->scrapeGame(
+            LotteryDraw::GAME_LOTTO_6AUS49,
+            'https://example.test/lotto-a',
+        );
+
+        $draw = app(LotteryDrawScrapingService::class)->scrapeGame(
+            LotteryDraw::GAME_LOTTO_6AUS49,
+            'https://example.test/lotto-b',
+        );
+
+        $this->assertSame(1, LotteryDraw::query()->count());
+        $this->assertSame([7, 8, 9, 10, 11, 12], $draw->numbers);
+        $this->assertSame(9, $draw->bonus_numbers['superzahl']);
+        $this->assertSame('https://example.test/lotto-b', $draw->source_file);
+    }
+
     public function test_lotto_de_lotto_page_uses_lotto_de_api_and_stores_latest_draw(): void
     {
         Http::fake([
