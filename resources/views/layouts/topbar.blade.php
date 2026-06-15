@@ -5,7 +5,7 @@
                 <a href="{{ route('admin.index') }}" class="flex items-center text-lg flex-shrink-0 font-bold leading-[69px]">
                     <x-navigation.application-icon class="inline-block w-10 aspect-square align-middle" />
                     <span class="hidden font-semibold text-gray-700 align-middle xl:block leading-[69px]">
-                        Scraper Factory
+                        Lotto
                     </span>
                 </a>
             </div>
@@ -56,9 +56,11 @@
                     <a href="{{ route('login') }}" class="rounded-md border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
                         Anmelden
                     </a>
-                    <a href="{{ route('register') }}" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700">
-                        Registrieren
-                    </a>
+                    @if (Route::has('register'))
+                        <a href="{{ route('register') }}" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+                            Registrieren
+                        </a>
+                    @endif
                 </div>
             @endauth
         </div>

@@ -3,7 +3,7 @@
 
 <head>
     @include('layouts.metahead')
-    <title>@yield('title') | Personen Factory</title>
+    <title>@yield('title') | Lotto</title>
     <!-- css -->
     @include('layouts.head-css')
     @livewireStyles

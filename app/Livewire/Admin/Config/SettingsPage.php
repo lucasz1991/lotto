@@ -2,213 +2,132 @@
 
 namespace App\Livewire\Admin\Config;
 
+use App\Jobs\ScrapeLotteryDraw;
+use App\Models\LotteryDraw;
+use App\Models\LotteryImport;
 use App\Models\Setting;
+use App\Services\Lottery\LotteryCsvImportService;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
+use Livewire\WithFileUploads;
+use Throwable;
 
 class SettingsPage extends Component
 {
-    public string $activeTab = 'scraper-transfer';
+    use WithFileUploads;
 
-    public string $baseApiUrl = '';
-    public string $apiPassword = '';
+    public string $activeTab = 'csv-import';
 
-    public string $openRouterApiUrl = '';
-    public string $openRouterApiKey = '';
-    public string $openRouterRefererUrl = '';
-    public string $openRouterModelTitle = '';
+    public $csvFile = null;
 
-    public string $openRouterTextModel = '';
-    public string $openRouterDataModel = '';
-    public string $openRouterImageGenerationModel = '';
-    public string $openRouterImageUnderstandingModel = '';
-    public string $openRouterSpeechToTextModel = '';
-    public string $openRouterTextToSpeechModel = '';
+    public ?array $lastImportSummary = null;
 
-    public int $openRouterTimeout = 120;
-    public float $openRouterTemperature = 0.4;
-    public int $openRouterMaxCompletionTokens = 1500;
+    public string $lottoScrapingUrl = '';
 
-    public bool $openRouterStreamEnabled = true;
+    public string $euroJackpotScrapingUrl = '';
 
-    // ClientController settings tab
-    public string $ccServerDomain = '';
-    public string $ccFallbackServerDomain = '';
-    public bool $ccRequireSignedJobs = true;
-    public bool $ccAllowServerRebind = true;
-    public int $ccHeartbeatIntervalSeconds = 30;
-    public int $ccJobTimeoutSeconds = 180;
-    public string $ccBootstrapApiKey = 'followflow-default-node-key-change-me';
-
-    public function mount(string $tab = 'scraper-transfer'): void
+    public function mount(): void
     {
-        $this->activeTab = $this->normalizeTab($tab);
-
-        $this->loadScraperSettings();
-        $this->loadOpenRouterSettings();
-        $this->loadClientControllerSettings();
+        $this->loadGameSettings();
     }
 
     public function switchTab(string $tab): void
     {
-        $this->redirectRoute('admin.settings', ['tab' => $this->normalizeTab($tab)], navigate: true);
+        $this->activeTab = in_array($tab, ['general', 'games', 'csv-import'], true) ? $tab : 'general';
     }
 
-    public function saveScraperTransfer(): void
+    public function saveGameSettings(): void
     {
         $validated = $this->validate([
-            'baseApiUrl' => ['required', 'url', 'max:2048'],
-            'apiPassword' => ['required', 'string', 'max:512'],
+            'lottoScrapingUrl' => ['nullable', 'url', 'max:2048'],
+            'euroJackpotScrapingUrl' => ['nullable', 'url', 'max:2048'],
         ]);
 
-        $existing = Setting::getValue('services', 'webaidetective_base');
-        $existing = is_array($existing) ? $existing : [];
-
-        Setting::setValue('services', 'webaidetective_base', [
-            ...$existing,
-            'scraper_profile_sync_url' => trim($validated['baseApiUrl']),
-            'scraper_profile_sync_password' => trim($validated['apiPassword']),
+        Setting::setValue('lottery', 'games', [
+            LotteryDraw::GAME_LOTTO_6AUS49 => [
+                'scraping_url' => trim((string) $validated['lottoScrapingUrl']),
+            ],
+            LotteryDraw::GAME_EUROJACKPOT => [
+                'scraping_url' => trim((string) $validated['euroJackpotScrapingUrl']),
+            ],
         ]);
 
-        session()->flash('success', 'Einstellungen fuer Scraper Transfer wurden gespeichert.');
-        $this->dispatch('showAlert', 'Scraper-Transfer gespeichert.', 'success');
+        session()->flash('success', 'Spiel-Einstellungen wurden gespeichert.');
     }
 
-    public function saveOpenRouter(): void
+    public function scrapeGame(string $game): void
     {
-        $validated = $this->validate([
-            'openRouterApiUrl' => ['required', 'url', 'max:2048'],
-            'openRouterApiKey' => ['required', 'string', 'max:512'],
-            'openRouterRefererUrl' => ['nullable', 'url', 'max:2048'],
-            'openRouterModelTitle' => ['nullable', 'string', 'max:255'],
+        if (! array_key_exists($game, LotteryDraw::gameLabels())) {
+            session()->flash('error', 'Unbekannte Spielart.');
 
-            'openRouterTextModel' => ['required', 'string', 'max:255'],
-            'openRouterDataModel' => ['required', 'string', 'max:255'],
-            'openRouterImageGenerationModel' => ['required', 'string', 'max:255'],
-            'openRouterImageUnderstandingModel' => ['required', 'string', 'max:255'],
-            'openRouterSpeechToTextModel' => ['required', 'string', 'max:255'],
-            'openRouterTextToSpeechModel' => ['required', 'string', 'max:255'],
+            return;
+        }
 
-            'openRouterTimeout' => ['required', 'integer', 'min:5', 'max:600'],
-            'openRouterTemperature' => ['required', 'numeric', 'min:0', 'max:2'],
-            'openRouterMaxCompletionTokens' => ['required', 'integer', 'min:1', 'max:200000'],
-            'openRouterStreamEnabled' => ['boolean'],
-        ]);
+        $this->saveGameSettings();
 
-        Setting::setValue('services', 'openrouter', [
-            'api_url' => trim($validated['openRouterApiUrl']),
-            'api_key' => trim($validated['openRouterApiKey']),
-            'referer_url' => trim((string) ($validated['openRouterRefererUrl'] ?? '')),
-            'model_title' => trim((string) ($validated['openRouterModelTitle'] ?? '')),
+        $url = $game === LotteryDraw::GAME_LOTTO_6AUS49
+            ? $this->lottoScrapingUrl
+            : $this->euroJackpotScrapingUrl;
 
-            'text_model' => trim($validated['openRouterTextModel']),
-            'data_model' => trim($validated['openRouterDataModel']),
-            'image_generation_model' => trim($validated['openRouterImageGenerationModel']),
-            'image_understanding_model' => trim($validated['openRouterImageUnderstandingModel']),
-            'speech_to_text_model' => trim($validated['openRouterSpeechToTextModel']),
-            'text_to_speech_model' => trim($validated['openRouterTextToSpeechModel']),
+        if (trim($url) === '') {
+            session()->flash('error', 'Bitte zuerst eine Scraping-URL fuer '.(LotteryDraw::gameLabels()[$game] ?? $game).' hinterlegen.');
 
-            'timeout' => (int) $validated['openRouterTimeout'],
-            'temperature' => (float) $validated['openRouterTemperature'],
-            'max_completion_tokens' => (int) $validated['openRouterMaxCompletionTokens'],
-            'stream_enabled' => (bool) $validated['openRouterStreamEnabled'],
-        ]);
+            return;
+        }
 
-        session()->flash('success', 'OpenRouter-Einstellungen wurden gespeichert.');
-        $this->dispatch('showAlert', 'OpenRouter gespeichert.', 'success');
+        ScrapeLotteryDraw::dispatch($game, trim($url));
+
+        session()->flash('success', 'Scraping-Job fuer '.(LotteryDraw::gameLabels()[$game] ?? $game).' wurde gestartet.');
     }
 
-    public function saveClientControllerSettings(): void
+    public function importCsv(LotteryCsvImportService $importer): void
     {
         $validated = $this->validate([
-            'ccServerDomain' => ['required', 'url', 'max:2048'],
-            'ccFallbackServerDomain' => ['nullable', 'url', 'max:2048'],
-            'ccRequireSignedJobs' => ['boolean'],
-            'ccAllowServerRebind' => ['boolean'],
-            'ccHeartbeatIntervalSeconds' => ['required', 'integer', 'min:5', 'max:3600'],
-            'ccJobTimeoutSeconds' => ['required', 'integer', 'min:5', 'max:86400'],
-            'ccBootstrapApiKey' => ['required', 'string', 'min:16', 'max:255'],
+            'csvFile' => ['required', 'file', 'mimes:csv,txt', 'max:51200'],
         ]);
 
-        Setting::setValue('client_controller', 'server', [
-            'server_domain' => trim($validated['ccServerDomain']),
-            'fallback_server_domain' => trim((string) ($validated['ccFallbackServerDomain'] ?? '')),
-            'require_signed_jobs' => (bool) $validated['ccRequireSignedJobs'],
-            'allow_server_rebind' => (bool) $validated['ccAllowServerRebind'],
-            'default_heartbeat_interval_seconds' => (int) $validated['ccHeartbeatIntervalSeconds'],
-            'default_job_timeout_seconds' => (int) $validated['ccJobTimeoutSeconds'],
-        ]);
+        $uploadedFile = $validated['csvFile'];
+        $storedPath = $uploadedFile->store('imports/lottery-csv', 'private');
+        $absolutePath = Storage::disk('private')->path($storedPath);
 
-        Setting::setValue('client_controller', 'security', [
-            'bootstrap_api_key' => trim($validated['ccBootstrapApiKey']),
-        ]);
+        try {
+            $import = $importer->import(
+                path: $absolutePath,
+                originalFilename: $uploadedFile->getClientOriginalName(),
+                storedPath: $storedPath,
+                disk: 'private',
+            );
 
-        session()->flash('success', 'ClientController-Einstellungen wurden gespeichert.');
-        $this->dispatch('showAlert', 'ClientController Einstellungen gespeichert.', 'success');
+            $this->lastImportSummary = [
+                'game' => LotteryDraw::gameLabels()[$import->game] ?? $import->game,
+                'rows_total' => $import->rows_total,
+                'rows_imported' => $import->rows_imported,
+                'rows_updated' => $import->rows_updated,
+                'rows_skipped' => $import->rows_skipped,
+            ];
+
+            $this->reset('csvFile');
+            session()->flash('success', 'CSV-Datei wurde importiert.');
+        } catch (Throwable $exception) {
+            session()->flash('error', 'CSV-Import fehlgeschlagen: '.$exception->getMessage());
+        }
     }
 
     public function render()
     {
-        return view('livewire.admin.config.settings-page')->layout('layouts.master');
+        return view('livewire.admin.config.settings-page', [
+            'drawCount' => LotteryDraw::query()->count(),
+            'latestImports' => LotteryImport::query()->latest()->limit(8)->get(),
+            'gameLabels' => LotteryDraw::gameLabels(),
+        ])->layout('layouts.master');
     }
 
-    protected function loadScraperSettings(): void
+    protected function loadGameSettings(): void
     {
-        $settings = Setting::getValue('services', 'webaidetective_base');
+        $settings = Setting::getValue('lottery', 'games');
         $settings = is_array($settings) ? $settings : [];
 
-        $this->baseApiUrl = trim((string) ($settings['scraper_profile_sync_url'] ?? config('services.webaidetective_base.scraper_profile_sync_url')));
-        $this->apiPassword = trim((string) ($settings['scraper_profile_sync_password'] ?? $settings['scraper_profile_sync_token'] ?? config('services.webaidetective_base.scraper_profile_sync_password')));
-    }
-
-    protected function loadOpenRouterSettings(): void
-    {
-        $settings = Setting::getValue('services', 'openrouter');
-        $settings = is_array($settings) ? $settings : [];
-
-        $this->openRouterApiUrl = trim((string) (
-            $settings['api_url']
-            ?? $settings['base_url']
-            ?? config('services.openrouter.api_url', 'https://openrouter.ai/api/v1/chat/completions')
-        ));
-
-        $this->openRouterApiKey = trim((string) ($settings['api_key'] ?? config('services.openrouter.api_key')));
-        $this->openRouterRefererUrl = trim((string) ($settings['referer_url'] ?? $settings['site_url'] ?? config('services.openrouter.referer_url', config('app.url'))));
-        $this->openRouterModelTitle = trim((string) ($settings['model_title'] ?? $settings['app_name'] ?? config('services.openrouter.model_title', config('app.name'))));
-
-        $this->openRouterTextModel = trim((string) ($settings['text_model'] ?? config('services.openrouter.text_model')));
-        $this->openRouterDataModel = trim((string) ($settings['data_model'] ?? $settings['analysis_model'] ?? config('services.openrouter.data_model')));
-        $this->openRouterImageGenerationModel = trim((string) ($settings['image_generation_model'] ?? $settings['image_model'] ?? config('services.openrouter.image_generation_model')));
-        $this->openRouterImageUnderstandingModel = trim((string) ($settings['image_understanding_model'] ?? $settings['vision_model'] ?? config('services.openrouter.image_understanding_model')));
-        $this->openRouterSpeechToTextModel = trim((string) ($settings['speech_to_text_model'] ?? config('services.openrouter.speech_to_text_model')));
-        $this->openRouterTextToSpeechModel = trim((string) ($settings['text_to_speech_model'] ?? config('services.openrouter.text_to_speech_model')));
-
-        $this->openRouterTimeout = (int) ($settings['timeout'] ?? config('services.openrouter.timeout', 120));
-        $this->openRouterTemperature = (float) ($settings['temperature'] ?? config('services.openrouter.temperature', 0.4));
-        $this->openRouterMaxCompletionTokens = (int) ($settings['max_completion_tokens'] ?? config('services.openrouter.max_completion_tokens', 1500));
-        $this->openRouterStreamEnabled = (bool) ($settings['stream_enabled'] ?? config('services.openrouter.stream_enabled', true));
-    }
-
-    protected function loadClientControllerSettings(): void
-    {
-        $server = Setting::getValue('client_controller', 'server');
-        $server = is_array($server) ? $server : [];
-
-        $security = Setting::getValue('client_controller', 'security');
-        $security = is_array($security) ? $security : [];
-
-        $this->ccServerDomain = trim((string) ($server['server_domain'] ?? config('app.url')));
-        $this->ccFallbackServerDomain = trim((string) ($server['fallback_server_domain'] ?? ''));
-        $this->ccRequireSignedJobs = (bool) ($server['require_signed_jobs'] ?? true);
-        $this->ccAllowServerRebind = (bool) ($server['allow_server_rebind'] ?? true);
-        $this->ccHeartbeatIntervalSeconds = (int) ($server['default_heartbeat_interval_seconds'] ?? 30);
-        $this->ccJobTimeoutSeconds = (int) ($server['default_job_timeout_seconds'] ?? 180);
-        $this->ccBootstrapApiKey = trim((string) ($security['bootstrap_api_key'] ?? 'followflow-default-node-key-change-me'));
-    }
-
-    protected function normalizeTab(string $tab): string
-    {
-        return in_array($tab, ['scraper-transfer', 'openrouter', 'client-controller'], true)
-            ? $tab
-            : 'scraper-transfer';
+        $this->lottoScrapingUrl = trim((string) ($settings[LotteryDraw::GAME_LOTTO_6AUS49]['scraping_url'] ?? ''));
+        $this->euroJackpotScrapingUrl = trim((string) ($settings[LotteryDraw::GAME_EUROJACKPOT]['scraping_url'] ?? ''));
     }
 }

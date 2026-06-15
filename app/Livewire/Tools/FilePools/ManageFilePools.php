@@ -142,7 +142,7 @@ class ManageFilePools extends Component
         }
 
         return $this->buildZipResponse(
-            'AiUserFactory_Files_'.now()->format('Ymd_His'),
+            'Lotto_Files_'.now()->format('Ymd_His'),
             $this->filePool->files()->get()
         );
     }
