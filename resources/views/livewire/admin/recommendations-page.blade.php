@@ -18,7 +18,7 @@
                 $isEuroJackpot = $game === \App\Models\LotteryDraw::GAME_EUROJACKPOT;
             @endphp
 
-            <section class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+            <section x-data="{ statsModal: null }" class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
                 <div class="border-b border-gray-200 bg-gray-50 px-4 py-4 sm:px-5">
                     <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                         <div class="min-w-0">
@@ -122,58 +122,109 @@
                             </div>
                         </div>
 
-                        <div class="grid gap-4 lg:grid-cols-2">
-                            <div class="overflow-hidden rounded-md border border-gray-200">
-                                <div class="flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-3">
-                                    <i class="mdi mdi-numeric text-lg text-gray-500"></i>
-                                    <h3 class="text-sm font-semibold text-gray-900">Hauptzahlen</h3>
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <button
+                                type="button"
+                                x-on:click="statsModal = 'main'"
+                                class="flex items-center justify-between gap-3 rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-left hover:border-blue-200 hover:bg-blue-50"
+                            >
+                                <span class="flex min-w-0 items-center gap-3">
+                                    <span class="inline-flex h-9 w-9 items-center justify-center rounded-md bg-white text-gray-600 shadow-sm">
+                                        <i class="mdi mdi-numeric text-lg"></i>
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block text-sm font-semibold text-gray-900">Hauptzahlen</span>
+                                        <span class="block truncate text-xs text-gray-500">Top {{ count($recommendation['main_stats']) }} Statistikwerte</span>
+                                    </span>
+                                </span>
+                                <i class="mdi mdi-open-in-new text-lg text-gray-400"></i>
+                            </button>
+
+                            <button
+                                type="button"
+                                x-on:click="statsModal = 'bonus'"
+                                class="flex items-center justify-between gap-3 rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-left hover:border-amber-200 hover:bg-amber-50"
+                            >
+                                <span class="flex min-w-0 items-center gap-3">
+                                    <span class="inline-flex h-9 w-9 items-center justify-center rounded-md bg-white text-gray-600 shadow-sm">
+                                        <i class="mdi mdi-star-four-points-outline text-lg"></i>
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block text-sm font-semibold text-gray-900">{{ $isEuroJackpot ? 'Eurozahlen' : 'Superzahl' }}</span>
+                                        <span class="block truncate text-xs text-gray-500">Top {{ count($recommendation['bonus_stats']) }} Statistikwerte</span>
+                                    </span>
+                                </span>
+                                <i class="mdi mdi-open-in-new text-lg text-gray-400"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div
+                        x-show="statsModal"
+                        x-cloak
+                        x-transition.opacity
+                        x-on:keydown.escape.window="statsModal = null"
+                        class="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:items-center sm:p-6"
+                    >
+                        <div class="absolute inset-0" x-on:click="statsModal = null"></div>
+
+                        <div class="relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-lg bg-white shadow-xl sm:max-w-3xl sm:rounded-lg">
+                            <div class="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-4">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900" x-text="statsModal === 'main' ? 'Hauptzahlen' : '{{ $isEuroJackpot ? 'Eurozahlen' : 'Superzahl' }}'"></h3>
+                                    <p class="mt-1 text-sm text-gray-500">{{ $recommendation['label'] }} - {{ $recommendation['method_label'] }}</p>
                                 </div>
-                                <div class="max-h-80 overflow-y-auto">
+                                <button
+                                    type="button"
+                                    x-on:click="statsModal = null"
+                                    class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
+                                    title="Schliessen"
+                                >
+                                    <i class="mdi mdi-close text-xl"></i>
+                                </button>
+                            </div>
+
+                            <div class="overflow-y-auto">
+                                <div x-show="statsModal === 'main'">
                                     <table class="min-w-full divide-y divide-gray-100 text-sm">
-                                        <thead class="sticky top-0 bg-white text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                        <thead class="sticky top-0 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                                             <tr>
-                                                <th class="px-4 py-2">Zahl</th>
-                                                <th class="px-4 py-2">Gesamt</th>
-                                                <th class="px-4 py-2">Letzte 50</th>
-                                                <th class="px-4 py-2">Faellig</th>
+                                                <th class="px-5 py-3">Zahl</th>
+                                                <th class="px-5 py-3">Gesamt</th>
+                                                <th class="px-5 py-3">Letzte 50</th>
+                                                <th class="px-5 py-3">Faellig</th>
                                             </tr>
                                         </thead>
-                                        <tbody class="divide-y divide-gray-100">
+                                        <tbody class="divide-y divide-gray-100 bg-white">
                                             @foreach ($recommendation['main_stats'] as $stat)
                                                 <tr class="hover:bg-gray-50">
-                                                    <td class="px-4 py-2 font-semibold text-gray-900">{{ $stat['number'] }}</td>
-                                                    <td class="px-4 py-2 text-gray-600">{{ $stat['frequency'] }}</td>
-                                                    <td class="px-4 py-2 text-gray-600">{{ $stat['recent_frequency'] }}</td>
-                                                    <td class="px-4 py-2 text-gray-600">{{ $stat['missed_draws'] }}</td>
+                                                    <td class="px-5 py-3 font-semibold text-gray-900">{{ $stat['number'] }}</td>
+                                                    <td class="px-5 py-3 text-gray-600">{{ $stat['frequency'] }}</td>
+                                                    <td class="px-5 py-3 text-gray-600">{{ $stat['recent_frequency'] }}</td>
+                                                    <td class="px-5 py-3 text-gray-600">{{ $stat['missed_draws'] }}</td>
                                                 </tr>
                                             @endforeach
                                         </tbody>
                                     </table>
                                 </div>
-                            </div>
 
-                            <div class="overflow-hidden rounded-md border border-gray-200">
-                                <div class="flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-3">
-                                    <i class="mdi mdi-star-four-points-outline text-lg text-gray-500"></i>
-                                    <h3 class="text-sm font-semibold text-gray-900">{{ $isEuroJackpot ? 'Eurozahlen' : 'Superzahl' }}</h3>
-                                </div>
-                                <div class="max-h-80 overflow-y-auto">
+                                <div x-show="statsModal === 'bonus'">
                                     <table class="min-w-full divide-y divide-gray-100 text-sm">
-                                        <thead class="sticky top-0 bg-white text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                        <thead class="sticky top-0 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                                             <tr>
-                                                <th class="px-4 py-2">Zahl</th>
-                                                <th class="px-4 py-2">Gesamt</th>
-                                                <th class="px-4 py-2">Letzte 50</th>
-                                                <th class="px-4 py-2">Faellig</th>
+                                                <th class="px-5 py-3">Zahl</th>
+                                                <th class="px-5 py-3">Gesamt</th>
+                                                <th class="px-5 py-3">Letzte 50</th>
+                                                <th class="px-5 py-3">Faellig</th>
                                             </tr>
                                         </thead>
-                                        <tbody class="divide-y divide-gray-100">
+                                        <tbody class="divide-y divide-gray-100 bg-white">
                                             @foreach ($recommendation['bonus_stats'] as $stat)
                                                 <tr class="hover:bg-gray-50">
-                                                    <td class="px-4 py-2 font-semibold text-gray-900">{{ $stat['number'] }}</td>
-                                                    <td class="px-4 py-2 text-gray-600">{{ $stat['frequency'] }}</td>
-                                                    <td class="px-4 py-2 text-gray-600">{{ $stat['recent_frequency'] }}</td>
-                                                    <td class="px-4 py-2 text-gray-600">{{ $stat['missed_draws'] }}</td>
+                                                    <td class="px-5 py-3 font-semibold text-gray-900">{{ $stat['number'] }}</td>
+                                                    <td class="px-5 py-3 text-gray-600">{{ $stat['frequency'] }}</td>
+                                                    <td class="px-5 py-3 text-gray-600">{{ $stat['recent_frequency'] }}</td>
+                                                    <td class="px-5 py-3 text-gray-600">{{ $stat['missed_draws'] }}</td>
                                                 </tr>
                                             @endforeach
                                         </tbody>
