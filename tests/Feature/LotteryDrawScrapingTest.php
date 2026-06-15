@@ -138,6 +138,118 @@ class LotteryDrawScrapingTest extends TestCase
         $this->assertSame('lotto.de-api', $draw->raw_data['source']);
     }
 
+    public function test_lotto_de_lotto_page_scans_data_below_select_fields(): void
+    {
+        Http::fake([
+            'https://www.lotto.de/lotto-6aus49/lottozahlen' => Http::response(<<<'HTML'
+<div class="Layout__content" id="seiteninhalt">
+    <div class="OddsDateInput">
+        <select><option value="2026-06-10">10.06. (Mittwoch)</option></select>
+        <select><option value="2026">2026</option></select>
+    </div>
+    <div class="DrawContainer">
+        <div class="WinningNumbers WinningNumbers--lotto6aus49">
+            <span class="WinningNumbers__date">Ziehung vom Samstag, 13.06.2026</span>
+            <div class="DrawNumbersCollection">
+                <div class="DrawNumbersCollection__container">
+                    <span class="LottoBall__circle" aria-label="4">4</span>
+                    <span class="LottoBall__circle" aria-label="13">13</span>
+                    <span class="LottoBall__circle" aria-label="16">16</span>
+                    <span class="LottoBall__circle" aria-label="20">20</span>
+                    <span class="LottoBall__circle" aria-label="24">24</span>
+                    <span class="LottoBall__circle" aria-label="43">43</span>
+                </div>
+                <div class="DrawNumbersCollection__container">
+                    <div class="DrawNumbersCollection__label">Superzahl</div>
+                    <span class="LottoBall__circle" aria-label="8">8</span>
+                </div>
+            </div>
+            <div class="WinningNumbers__additionalGames">
+                <div class="WinningNumbersAdditionalGame"><img alt="Spiel 77 - Logo der Zusatzlotterie"><span>5 7 7 0 2 3 2</span></div>
+                <div class="WinningNumbersAdditionalGame"><img alt="SUPER6 - Zusatzlotterie"><span>5 5 3 9 4 2</span></div>
+            </div>
+        </div>
+        <div class="OddsTableContainer">
+            <div class="GameAmount">Spieleinsatz: 53.177.703,60&nbsp;&euro;</div>
+            <table><tbody>
+                <tr><td>1</td><td>6 Richtige + SZ</td><td>0 x</td><td>unbesetzt</td></tr>
+                <tr><td>2</td><td>6 Richtige</td><td>1 x</td><td>2.854.924,20&nbsp;&euro;</td></tr>
+            </tbody></table>
+        </div>
+    </div>
+</div>
+HTML),
+        ]);
+
+        $draw = app(LotteryDrawScrapingService::class)->scrapeGame(
+            LotteryDraw::GAME_LOTTO_6AUS49,
+            'https://www.lotto.de/lotto-6aus49/lottozahlen',
+        );
+
+        $this->assertSame('2026-06-13', $draw->draw_date->toDateString());
+        $this->assertSame([4, 13, 16, 20, 24, 43], $draw->numbers);
+        $this->assertSame(8, $draw->bonus_numbers['superzahl']);
+        $this->assertSame('5770232', $draw->bonus_numbers['spiel77']);
+        $this->assertSame('553942', $draw->bonus_numbers['super6']);
+        $this->assertSame(5317770360, $draw->stake_cents);
+        $this->assertSame(1, $draw->prize_classes[1]['winners']);
+        $this->assertSame(285492420, $draw->prize_classes[1]['quote_cents']);
+        $this->assertSame('scrape', $draw->raw_data['source']);
+    }
+
+    public function test_lotto_de_eurojackpot_page_scans_data_below_select_fields(): void
+    {
+        Http::fake([
+            'https://www.lotto.de/eurojackpot/zahlen' => Http::response(<<<'HTML'
+<div class="Layout__content" id="seiteninhalt">
+    <div class="OddsDateInput">
+        <select><option value="2026-06-05">05.06. (Freitag)</option></select>
+        <select><option value="2026">2026</option></select>
+    </div>
+    <div class="DrawContainer">
+        <div class="WinningNumbers WinningNumbers--eurojackpot">
+            <span class="WinningNumbers__date">Ziehung vom Freitag, 12.06.2026</span>
+            <div class="DrawNumbersCollection">
+                <div class="DrawNumbersCollection__container">
+                    <span class="LottoBall__circle" aria-label="2">2</span>
+                    <span class="LottoBall__circle" aria-label="4">4</span>
+                    <span class="LottoBall__circle" aria-label="14">14</span>
+                    <span class="LottoBall__circle" aria-label="18">18</span>
+                    <span class="LottoBall__circle" aria-label="28">28</span>
+                </div>
+                <div class="DrawNumbersCollection__container">
+                    <div class="DrawNumbersCollection__label">Eurozahlen</div>
+                    <span class="LottoBall__circle" aria-label="9">9</span>
+                    <span class="LottoBall__circle" aria-label="11">11</span>
+                </div>
+            </div>
+        </div>
+        <div class="OddsTableContainer">
+            <div class="GameAmount">Spieleinsatz: 42.621.542,00&nbsp;&euro;</div>
+            <table><tbody>
+                <tr><td>1</td><td>5 Richtige + 2 Eurozahlen</td><td>--</td><td>--</td></tr>
+                <tr><td>2</td><td>5 Richtige + 1 Eurozahl</td><td>4 x</td><td>452.853,80&nbsp;&euro;</td></tr>
+            </tbody></table>
+        </div>
+    </div>
+</div>
+HTML),
+        ]);
+
+        $draw = app(LotteryDrawScrapingService::class)->scrapeGame(
+            LotteryDraw::GAME_EUROJACKPOT,
+            'https://www.lotto.de/eurojackpot/zahlen',
+        );
+
+        $this->assertSame('2026-06-12', $draw->draw_date->toDateString());
+        $this->assertSame([2, 4, 14, 18, 28], $draw->numbers);
+        $this->assertSame([9, 11], $draw->bonus_numbers['euro_numbers']);
+        $this->assertSame(4262154200, $draw->stake_cents);
+        $this->assertSame(4, $draw->prize_classes[1]['winners']);
+        $this->assertSame(45285380, $draw->prize_classes[1]['quote_cents']);
+        $this->assertSame('scrape', $draw->raw_data['source']);
+    }
+
     public function test_settings_page_can_run_direct_scrape_and_show_result(): void
     {
         Http::fake([

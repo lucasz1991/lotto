@@ -6,9 +6,14 @@ use App\Models\LotteryDraw;
 use App\Models\Setting;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
+use DOMDocument;
+use DOMElement;
+use DOMNode;
+use DOMXPath;
 use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
 use RuntimeException;
+use Throwable;
 
 class LotteryDrawScrapingService
 {
@@ -44,6 +49,22 @@ class LotteryDrawScrapingService
 
     protected function scrapeLottoDeGame(string $game, string $sourceUrl): LotteryDraw
     {
+        try {
+            $response = Http::timeout(30)
+                ->retry(2, 500)
+                ->withHeaders([
+                    'User-Agent' => 'LottoAdmin/1.0 (+'.config('app.url').')',
+                    'Accept' => 'text/html,application/xhtml+xml,application/xml,text/plain;q=0.9,*/*;q=0.8',
+                ])
+                ->get($sourceUrl);
+
+            $response->throw();
+
+            return $this->storeParsedDraw($game, $sourceUrl, $response->body());
+        } catch (Throwable) {
+            // lotto.de also exposes JSON endpoints; keep them as a fallback when the page markup is unavailable.
+        }
+
         return match ($game) {
             LotteryDraw::GAME_LOTTO_6AUS49 => $this->scrapeLottoDeLotto6Aus49($sourceUrl),
             LotteryDraw::GAME_EUROJACKPOT => $this->scrapeLottoDeEuroJackpot($sourceUrl),
@@ -113,6 +134,8 @@ class LotteryDrawScrapingService
                 'draw_identifier' => $parsed['draw_date'],
                 'numbers' => $parsed['numbers'],
                 'bonus_numbers' => $parsed['bonus_numbers'],
+                'stake_cents' => $parsed['stake_cents'] ?? null,
+                'prize_classes' => $parsed['prize_classes'] ?? null,
                 'source_file' => $sourceUrl,
                 'raw_data' => array_merge([
                     'url' => $sourceUrl,
@@ -124,6 +147,12 @@ class LotteryDrawScrapingService
 
     public function parse(string $game, string $content): array
     {
+        $htmlParsed = $this->parseLottoDePageHtml($game, $content);
+
+        if ($htmlParsed !== null) {
+            return $htmlParsed;
+        }
+
         $text = $this->plainText($content);
         $date = $this->parseDate($text);
 
@@ -252,6 +281,217 @@ class LotteryDrawScrapingService
         return CarbonImmutable::createFromTimestampMs((int) $timestamp)->setTimezone(config('app.timezone'))->startOfDay();
     }
 
+    protected function parseLottoDePageHtml(string $game, string $content): ?array
+    {
+        if (! str_contains($content, 'OddsDateInput') || ! str_contains($content, 'DrawContainer')) {
+            return null;
+        }
+
+        $xpath = $this->xpathForHtml($content);
+        $drawContainer = $this->firstElement($xpath, '//*[contains(concat(" ", normalize-space(@class), " "), " DrawContainer ")]');
+
+        if (! $drawContainer) {
+            return null;
+        }
+
+        $dateText = $this->nodeText($this->firstElement($xpath, './/*[contains(concat(" ", normalize-space(@class), " "), " WinningNumbers__date ")]', $drawContainer));
+        $drawDate = $this->parseDate($dateText)->toDateString();
+        $numberGroups = $this->parseDrawNumberGroups($xpath, $drawContainer);
+        $tables = $this->parseOddsTables($xpath, $drawContainer);
+
+        return match ($game) {
+            LotteryDraw::GAME_LOTTO_6AUS49 => [
+                'draw_date' => $drawDate,
+                'numbers' => $this->requireNumberCount($numberGroups['main'] ?? [], 6, 'Lotto 6aus49 Gewinnzahlen'),
+                'bonus_numbers' => array_filter([
+                    'superzahl' => $numberGroups['superzahl'][0] ?? null,
+                    'spiel77' => $numberGroups['spiel77'] ?? null,
+                    'super6' => $numberGroups['super6'] ?? null,
+                ], fn (mixed $value): bool => $value !== null && $value !== []),
+                'stake_cents' => $tables[0]['stake_cents'] ?? null,
+                'prize_classes' => $tables[0]['prize_classes'] ?? null,
+            ],
+            LotteryDraw::GAME_EUROJACKPOT => [
+                'draw_date' => $drawDate,
+                'numbers' => $this->requireNumberCount($numberGroups['main'] ?? [], 5, 'EuroJackpot Gewinnzahlen'),
+                'bonus_numbers' => [
+                    'euro_numbers' => $this->requireNumberCount($numberGroups['euro_numbers'] ?? [], 2, 'EuroJackpot Eurozahlen'),
+                ],
+                'stake_cents' => $tables[0]['stake_cents'] ?? null,
+                'prize_classes' => $tables[0]['prize_classes'] ?? null,
+            ],
+            default => throw new InvalidArgumentException('Unbekannte Spielart.'),
+        };
+    }
+
+    protected function xpathForHtml(string $content): DOMXPath
+    {
+        $document = new DOMDocument;
+        $previous = libxml_use_internal_errors(true);
+        $document->loadHTML('<?xml encoding="UTF-8">'.$content, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        return new DOMXPath($document);
+    }
+
+    protected function parseDrawNumberGroups(DOMXPath $xpath, DOMElement $drawContainer): array
+    {
+        $groups = [];
+        $containers = $xpath->query('.//*[contains(concat(" ", normalize-space(@class), " "), " DrawNumbersCollection__container ")]', $drawContainer);
+
+        foreach ($containers ?: [] as $index => $container) {
+            if (! $container instanceof DOMElement) {
+                continue;
+            }
+
+            $label = mb_strtolower($this->nodeText($this->firstElement($xpath, './/*[contains(concat(" ", normalize-space(@class), " "), " DrawNumbersCollection__label ")]', $container)));
+            $numbers = $this->numbersFromBallNodes($xpath, $container);
+
+            if ($numbers === []) {
+                continue;
+            }
+
+            if (str_contains($label, 'superzahl')) {
+                $groups['superzahl'] = $numbers;
+            } elseif (str_contains($label, 'euro')) {
+                $groups['euro_numbers'] = $numbers;
+            } elseif ($index === 0) {
+                $groups['main'] = $numbers;
+            } elseif (count($numbers) === 2) {
+                $groups['euro_numbers'] = $numbers;
+            }
+        }
+
+        $additionalGames = $xpath->query('.//*[contains(concat(" ", normalize-space(@class), " "), " WinningNumbersAdditionalGame ")]', $drawContainer);
+
+        foreach ($additionalGames ?: [] as $additionalGame) {
+            if (! $additionalGame instanceof DOMElement) {
+                continue;
+            }
+
+            $text = $this->nodeText($additionalGame);
+            $digits = preg_replace('/\D+/', '', $text) ?? '';
+            $logoText = mb_strtolower(implode(' ', [
+                $this->attributeFromFirst($xpath, './/img', 'alt', $additionalGame),
+                $this->attributeFromFirst($xpath, './/img', 'title', $additionalGame),
+                $this->attributeFromFirst($xpath, './/img', 'src', $additionalGame),
+            ]));
+
+            if ($digits === '') {
+                continue;
+            }
+
+            if (str_contains($logoText, 'spiel77') || str_contains($logoText, 'spiel 77')) {
+                $groups['spiel77'] = $digits;
+            } elseif (str_contains($logoText, 'super6') || str_contains($logoText, 'super 6')) {
+                $groups['super6'] = $digits;
+            }
+        }
+
+        return $groups;
+    }
+
+    protected function numbersFromBallNodes(DOMXPath $xpath, DOMElement $container): array
+    {
+        $numbers = [];
+        $balls = $xpath->query('.//*[contains(concat(" ", normalize-space(@class), " "), " LottoBall__circle ")]', $container);
+
+        foreach ($balls ?: [] as $ball) {
+            if (! $ball instanceof DOMElement) {
+                continue;
+            }
+
+            $value = $ball->getAttribute('aria-label') ?: $this->nodeText($ball);
+
+            if (is_numeric($value)) {
+                $numbers[] = (int) $value;
+            }
+        }
+
+        return $numbers;
+    }
+
+    protected function parseOddsTables(DOMXPath $xpath, DOMElement $drawContainer): array
+    {
+        $tables = [];
+        $containers = $xpath->query('.//*[contains(concat(" ", normalize-space(@class), " "), " OddsTableContainer ")]', $drawContainer);
+
+        foreach ($containers ?: [] as $container) {
+            if (! $container instanceof DOMElement) {
+                continue;
+            }
+
+            $tables[] = [
+                'title' => $this->nodeText($this->firstElement($xpath, './/*[contains(concat(" ", normalize-space(@class), " "), " OddsTableContainer__header ")]', $container)),
+                'stake_cents' => $this->parseMoneyToCents($this->nodeText($this->firstElement($xpath, './/*[contains(concat(" ", normalize-space(@class), " "), " GameAmount ")]', $container))),
+                'prize_classes' => $this->parseOddsTableRows($xpath, $container),
+            ];
+        }
+
+        return $tables;
+    }
+
+    protected function parseOddsTableRows(DOMXPath $xpath, DOMElement $container): array
+    {
+        $rows = [];
+        $rowNodes = $xpath->query('.//tbody/tr', $container);
+
+        foreach ($rowNodes ?: [] as $rowNode) {
+            if (! $rowNode instanceof DOMElement) {
+                continue;
+            }
+
+            $cells = [];
+            foreach ($xpath->query('./td', $rowNode) ?: [] as $cell) {
+                $cells[] = $this->nodeText($cell);
+            }
+
+            if (count($cells) < 4) {
+                continue;
+            }
+
+            $rows[] = [
+                'class' => $this->parseIntOrNull($cells[0]),
+                'match' => $cells[1],
+                'winners' => $this->parseIntOrNull($cells[2]),
+                'quote_cents' => $this->parseMoneyToCents($cells[3]),
+                'jackpot' => mb_strtolower($cells[2]) === 'jackpot' || mb_strtolower($cells[3]) === 'jackpot',
+            ];
+        }
+
+        return $rows;
+    }
+
+    protected function firstElement(DOMXPath $xpath, string $query, ?DOMNode $contextNode = null): ?DOMElement
+    {
+        $nodes = $contextNode ? $xpath->query($query, $contextNode) : $xpath->query($query);
+        $node = $nodes?->item(0);
+
+        return $node instanceof DOMElement ? $node : null;
+    }
+
+    protected function attributeFromFirst(DOMXPath $xpath, string $query, string $attribute, DOMNode $contextNode): string
+    {
+        $element = $this->firstElement($xpath, $query, $contextNode);
+
+        return $element?->getAttribute($attribute) ?? '';
+    }
+
+    protected function nodeText(?DOMNode $node): string
+    {
+        return $this->clean($node?->textContent ?? '');
+    }
+
+    protected function requireNumberCount(array $numbers, int $count, string $label): array
+    {
+        if (count($numbers) !== $count) {
+            throw new RuntimeException($label.' konnten nicht erkannt werden.');
+        }
+
+        return $numbers;
+    }
+
     protected function plainText(string $content): string
     {
         $content = preg_replace('/<script\b[^>]*>.*?<\/script>/is', ' ', $content) ?? $content;
@@ -330,5 +570,52 @@ class LotteryDrawScrapingService
         }
 
         return $numbers;
+    }
+
+    protected function parseIntOrNull(mixed $value): ?int
+    {
+        $value = $this->clean($value);
+
+        if ($value === '' || $value === '--' || mb_strtolower($value) === 'unbesetzt') {
+            return null;
+        }
+
+        $digits = preg_replace('/\D+/', '', $value);
+
+        return $digits === '' ? null : (int) $digits;
+    }
+
+    protected function parseMoneyToCents(mixed $value): ?int
+    {
+        $value = $this->clean($value);
+        $value = preg_replace('/^Spieleinsatz:\s*/iu', '', $value) ?? $value;
+
+        if ($value === '' || $value === '--' || mb_strtolower($value) === 'jackpot' || mb_strtolower($value) === 'unbesetzt') {
+            return null;
+        }
+
+        $value = preg_replace('/[^\d,.-]+/u', '', $value) ?? $value;
+        $normalized = str_replace(['.', ' '], '', $value);
+        $normalized = str_replace(',', '.', $normalized);
+
+        if (! is_numeric($normalized)) {
+            return null;
+        }
+
+        return (int) round(((float) $normalized) * 100);
+    }
+
+    protected function clean(mixed $value): string
+    {
+        $value = (string) $value;
+
+        if ($value !== '' && ! mb_check_encoding($value, 'UTF-8')) {
+            $value = mb_convert_encoding($value, 'UTF-8', 'Windows-1252');
+        }
+
+        $value = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $value = str_replace("\xC2\xA0", ' ', $value);
+
+        return preg_replace('/\s+/u', ' ', trim($value)) ?? trim($value);
     }
 }
