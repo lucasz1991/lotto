@@ -152,8 +152,8 @@ class SettingsPage extends Component
         $settings = Setting::getValue('lottery', 'games');
         $settings = is_array($settings) ? $settings : [];
 
-        $this->lottoScrapingUrl = trim((string) ($settings[LotteryDraw::GAME_LOTTO_6AUS49]['scraping_url'] ?? ''));
-        $this->euroJackpotScrapingUrl = trim((string) ($settings[LotteryDraw::GAME_EUROJACKPOT]['scraping_url'] ?? ''));
+        $this->lottoScrapingUrl = trim((string) ($settings[LotteryDraw::GAME_LOTTO_6AUS49]['scraping_url'] ?? LotteryDrawScrapingService::DEFAULT_URLS[LotteryDraw::GAME_LOTTO_6AUS49]));
+        $this->euroJackpotScrapingUrl = trim((string) ($settings[LotteryDraw::GAME_EUROJACKPOT]['scraping_url'] ?? LotteryDrawScrapingService::DEFAULT_URLS[LotteryDraw::GAME_EUROJACKPOT]));
     }
 
     protected function persistGameSettings(): void

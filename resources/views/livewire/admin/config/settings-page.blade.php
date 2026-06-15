@@ -73,7 +73,7 @@
                             id="lotto-scraping-url"
                             type="url"
                             wire:model.defer="lottoScrapingUrl"
-                            placeholder="https://example.com/lotto-6aus49"
+                            placeholder="https://www.lotto.de/lotto-6aus49/lottozahlen"
                             class="mt-2 block w-full rounded-md border border-gray-300 bg-white p-3 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         >
                         @error('lottoScrapingUrl') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
@@ -107,7 +107,7 @@
                             id="eurojackpot-scraping-url"
                             type="url"
                             wire:model.defer="euroJackpotScrapingUrl"
-                            placeholder="https://example.com/eurojackpot"
+                            placeholder="https://www.lotto.de/eurojackpot/zahlen"
                             class="mt-2 block w-full rounded-md border border-gray-300 bg-white p-3 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         >
                         @error('euroJackpotScrapingUrl') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
@@ -175,7 +175,7 @@
                 @endif
 
                 <div class="rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
-                    Der Scraper erwartet erkennbare Texte wie <strong>Gewinnzahlen</strong>, <strong>Superzahl</strong> oder <strong>Eurozahlen</strong> auf der Zielseite. Bei stark abweichendem HTML kann der Parser spaeter pro Anbieter erweitert werden.
+                    Lotto.de-URLs werden automatisch ueber die internen JSON-Endpunkte von Lotto.de verarbeitet. Andere Seiten werden weiterhin ueber erkennbare Texte wie <strong>Gewinnzahlen</strong>, <strong>Superzahl</strong> oder <strong>Eurozahlen</strong> geparst.
                 </div>
 
                 <div class="flex justify-end">

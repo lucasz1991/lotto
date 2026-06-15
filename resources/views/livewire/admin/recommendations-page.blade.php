@@ -6,9 +6,6 @@
         </p>
     </div>
 
-    <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-        Hinweis: Lottoziehungen bleiben Zufallsereignisse. Diese Empfehlungen sind keine Gewinnprognose, sondern eine transparente Auswertung historischer Daten.
-    </div>
 
     <div class="grid gap-6 xl:grid-cols-2">
         @foreach ($recommendations as $recommendation)

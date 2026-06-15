@@ -7,6 +7,7 @@ use App\Livewire\Admin\Config\SettingsPage;
 use App\Models\LotteryDraw;
 use App\Models\Setting;
 use App\Services\Lottery\LotteryDrawScrapingService;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
@@ -69,6 +70,74 @@ class LotteryDrawScrapingTest extends TestCase
         $this->assertSame('2026-06-13', $draw->draw_date->toDateString());
     }
 
+    public function test_lotto_de_lotto_page_uses_lotto_de_api_and_stores_latest_draw(): void
+    {
+        Http::fake([
+            'https://www.lotto.de/api/stats/entities.lotto/last/game/1' => Http::response([
+                'drawDate' => $this->lottoDeTimestamp('2026-06-10'),
+                'drawNumbersCollection' => [
+                    ['drawNumber' => 1, 'index' => 1],
+                    ['drawNumber' => 2, 'index' => 2],
+                    ['drawNumber' => 3, 'index' => 3],
+                    ['drawNumber' => 4, 'index' => 4],
+                    ['drawNumber' => 5, 'index' => 5],
+                    ['drawNumber' => 6, 'index' => 6],
+                ],
+                'superNumber' => 0,
+            ]),
+            'https://www.lotto.de/api/stats/entities.lotto/last/game/2' => Http::response([
+                'drawDate' => $this->lottoDeTimestamp('2026-06-13'),
+                'drawNumbersCollection' => [
+                    ['drawNumber' => 16, 'index' => 1],
+                    ['drawNumber' => 13, 'index' => 2],
+                    ['drawNumber' => 4, 'index' => 3],
+                    ['drawNumber' => 20, 'index' => 4],
+                    ['drawNumber' => 24, 'index' => 5],
+                    ['drawNumber' => 43, 'index' => 6],
+                ],
+                'superNumber' => 8,
+            ]),
+        ]);
+
+        $draw = app(LotteryDrawScrapingService::class)->scrapeGame(
+            LotteryDraw::GAME_LOTTO_6AUS49,
+            'https://www.lotto.de/lotto-6aus49/lottozahlen',
+        );
+
+        $this->assertSame('2026-06-13', $draw->draw_date->toDateString());
+        $this->assertSame([16, 13, 4, 20, 24, 43], $draw->numbers);
+        $this->assertSame(8, $draw->bonus_numbers['superzahl']);
+        $this->assertSame('lotto.de-api', $draw->raw_data['source']);
+    }
+
+    public function test_lotto_de_eurojackpot_page_uses_lotto_de_api(): void
+    {
+        Http::fake([
+            'https://www.lotto.de/api/stats/entities.eurojackpot/last' => Http::response([
+                'drawDate' => $this->lottoDeTimestamp('2026-06-12'),
+                'drawNumbersCollection' => [
+                    ['drawNumber' => 2, 'drawNumberType' => 0, 'index' => 0],
+                    ['drawNumber' => 28, 'drawNumberType' => 0, 'index' => 1],
+                    ['drawNumber' => 18, 'drawNumberType' => 0, 'index' => 2],
+                    ['drawNumber' => 4, 'drawNumberType' => 0, 'index' => 3],
+                    ['drawNumber' => 14, 'drawNumberType' => 0, 'index' => 4],
+                    ['drawNumber' => 9, 'drawNumberType' => 1, 'index' => 5],
+                    ['drawNumber' => 11, 'drawNumberType' => 1, 'index' => 6],
+                ],
+            ]),
+        ]);
+
+        $draw = app(LotteryDrawScrapingService::class)->scrapeGame(
+            LotteryDraw::GAME_EUROJACKPOT,
+            'https://www.lotto.de/eurojackpot/zahlen',
+        );
+
+        $this->assertSame('2026-06-12', $draw->draw_date->toDateString());
+        $this->assertSame([2, 28, 18, 4, 14], $draw->numbers);
+        $this->assertSame([9, 11], $draw->bonus_numbers['euro_numbers']);
+        $this->assertSame('lotto.de-api', $draw->raw_data['source']);
+    }
+
     public function test_settings_page_can_run_direct_scrape_and_show_result(): void
     {
         Http::fake([
@@ -87,5 +156,10 @@ class LotteryDrawScrapingTest extends TestCase
             'game' => LotteryDraw::GAME_LOTTO_6AUS49,
             'source_file' => 'https://example.test/lotto',
         ]);
+    }
+
+    private function lottoDeTimestamp(string $date): int
+    {
+        return CarbonImmutable::parse($date, config('app.timezone'))->startOfDay()->getTimestamp() * 1000;
     }
 }
