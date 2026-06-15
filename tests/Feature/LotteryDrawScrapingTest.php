@@ -20,12 +20,12 @@ class LotteryDrawScrapingTest extends TestCase
     public function test_lotto_draw_can_be_scraped_from_html(): void
     {
         Http::fake([
-            'https://example.test/lotto' => Http::response('<html><body>Ziehung vom 13.06.2026 Gewinnzahlen 3 12 18 22 34 49 Superzahl 7</body></html>'),
+            'https://www.lotto.de/lotto-6aus49/lottozahlen' => Http::response('<html><body>Ziehung vom 13.06.2026 Gewinnzahlen 3 12 18 22 34 49 Superzahl 7</body></html>'),
         ]);
 
         $draw = app(LotteryDrawScrapingService::class)->scrapeGame(
             LotteryDraw::GAME_LOTTO_6AUS49,
-            'https://example.test/lotto',
+            'https://www.lotto.de/lotto-6aus49/lottozahlen',
         );
 
         $this->assertSame(LotteryDraw::GAME_LOTTO_6AUS49, $draw->game);
@@ -37,12 +37,12 @@ class LotteryDrawScrapingTest extends TestCase
     public function test_eurojackpot_draw_can_be_scraped_from_html(): void
     {
         Http::fake([
-            'https://example.test/eurojackpot' => Http::response('<main>Ziehung 2026-06-12 Gewinnzahlen 8 14 27 35 42 Eurozahlen 3 11</main>'),
+            'https://www.lotto.de/eurojackpot/zahlen' => Http::response('<main>Ziehung 2026-06-12 Gewinnzahlen 8 14 27 35 42 Eurozahlen 3 11</main>'),
         ]);
 
         $draw = app(LotteryDrawScrapingService::class)->scrapeGame(
             LotteryDraw::GAME_EUROJACKPOT,
-            'https://example.test/eurojackpot',
+            'https://www.lotto.de/eurojackpot/zahlen',
         );
 
         $this->assertSame(LotteryDraw::GAME_EUROJACKPOT, $draw->game);
@@ -55,12 +55,12 @@ class LotteryDrawScrapingTest extends TestCase
     {
         Setting::setValue('lottery', 'games', [
             LotteryDraw::GAME_LOTTO_6AUS49 => [
-                'scraping_url' => 'https://example.test/lotto',
+                'scraping_url' => 'https://www.lotto.de/lotto-6aus49/lottozahlen',
             ],
         ]);
 
         Http::fake([
-            'https://example.test/lotto' => Http::response('Ziehung vom 13.06.2026 Gewinnzahlen 1 2 3 4 5 6 Superzahl 0'),
+            'https://www.lotto.de/lotto-6aus49/lottozahlen' => Http::response('Ziehung vom 13.06.2026 Gewinnzahlen 1 2 3 4 5 6 Superzahl 0'),
         ]);
 
         (new ScrapeLotteryDraw(LotteryDraw::GAME_LOTTO_6AUS49))->handle(app(LotteryDrawScrapingService::class));
@@ -141,11 +141,11 @@ class LotteryDrawScrapingTest extends TestCase
     public function test_settings_page_can_run_direct_scrape_and_show_result(): void
     {
         Http::fake([
-            'https://example.test/lotto' => Http::response('Ziehung vom 13.06.2026 Gewinnzahlen 1 2 3 4 5 6 Superzahl 0'),
+            'https://www.lotto.de/lotto-6aus49/lottozahlen' => Http::response('Ziehung vom 13.06.2026 Gewinnzahlen 1 2 3 4 5 6 Superzahl 0'),
         ]);
 
         Livewire::test(SettingsPage::class)
-            ->set('lottoScrapingUrl', 'https://example.test/lotto')
+            ->set('lottoScrapingUrl', 'https://www.lotto.de/lotto-6aus49/lottozahlen')
             ->call('testScrapeGame', LotteryDraw::GAME_LOTTO_6AUS49)
             ->assertSet('lastScrapeResult.game', 'Lotto 6aus49')
             ->assertSet('lastScrapeResult.draw_date', '13.06.2026')
@@ -154,7 +154,7 @@ class LotteryDrawScrapingTest extends TestCase
 
         $this->assertDatabaseHas('lottery_draws', [
             'game' => LotteryDraw::GAME_LOTTO_6AUS49,
-            'source_file' => 'https://example.test/lotto',
+            'source_file' => 'https://www.lotto.de/lotto-6aus49/lottozahlen',
         ]);
     }
 
