@@ -78,14 +78,24 @@
                         >
                         @error('lottoScrapingUrl') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
 
-                        <div class="mt-5 flex justify-end gap-3">
+                        <div class="mt-5 flex flex-wrap justify-end gap-3">
+                            <button
+                                type="button"
+                                wire:click="testScrapeGame('{{ \App\Models\LotteryDraw::GAME_LOTTO_6AUS49 }}')"
+                                wire:loading.attr="disabled"
+                                wire:target="testScrapeGame('{{ \App\Models\LotteryDraw::GAME_LOTTO_6AUS49 }}')"
+                                class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                            >
+                                <span wire:loading.remove wire:target="testScrapeGame('{{ \App\Models\LotteryDraw::GAME_LOTTO_6AUS49 }}')">Direkt testen</span>
+                                <span wire:loading wire:target="testScrapeGame('{{ \App\Models\LotteryDraw::GAME_LOTTO_6AUS49 }}')">Teste...</span>
+                            </button>
                             <button
                                 type="button"
                                 wire:click="scrapeGame('{{ \App\Models\LotteryDraw::GAME_LOTTO_6AUS49 }}')"
                                 wire:loading.attr="disabled"
                                 class="rounded-md border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-60"
                             >
-                                Jetzt scrapen
+                                Job starten
                             </button>
                         </div>
                     </div>
@@ -102,18 +112,67 @@
                         >
                         @error('euroJackpotScrapingUrl') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
 
-                        <div class="mt-5 flex justify-end gap-3">
+                        <div class="mt-5 flex flex-wrap justify-end gap-3">
+                            <button
+                                type="button"
+                                wire:click="testScrapeGame('{{ \App\Models\LotteryDraw::GAME_EUROJACKPOT }}')"
+                                wire:loading.attr="disabled"
+                                wire:target="testScrapeGame('{{ \App\Models\LotteryDraw::GAME_EUROJACKPOT }}')"
+                                class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                            >
+                                <span wire:loading.remove wire:target="testScrapeGame('{{ \App\Models\LotteryDraw::GAME_EUROJACKPOT }}')">Direkt testen</span>
+                                <span wire:loading wire:target="testScrapeGame('{{ \App\Models\LotteryDraw::GAME_EUROJACKPOT }}')">Teste...</span>
+                            </button>
                             <button
                                 type="button"
                                 wire:click="scrapeGame('{{ \App\Models\LotteryDraw::GAME_EUROJACKPOT }}')"
                                 wire:loading.attr="disabled"
                                 class="rounded-md border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-60"
                             >
-                                Jetzt scrapen
+                                Job starten
                             </button>
                         </div>
                     </div>
                 </div>
+
+                @if ($lastScrapeResult)
+                    <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-5">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <h3 class="text-base font-semibold text-emerald-950">Letztes Scraping-Ergebnis</h3>
+                                <p class="mt-1 text-sm text-emerald-800">
+                                    Direkt aus der GUI abgerufen und in der Historie gespeichert.
+                                </p>
+                            </div>
+                            <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-900">
+                                {{ $lastScrapeResult['stored_at'] }}
+                            </span>
+                        </div>
+
+                        <div class="mt-5 grid gap-4 md:grid-cols-4">
+                            <div class="rounded-md bg-white p-4 shadow-sm">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Spielart</p>
+                                <p class="mt-2 text-sm font-semibold text-gray-900">{{ $lastScrapeResult['game'] }}</p>
+                            </div>
+                            <div class="rounded-md bg-white p-4 shadow-sm">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Datum</p>
+                                <p class="mt-2 text-sm font-semibold text-gray-900">{{ $lastScrapeResult['draw_date'] }}</p>
+                            </div>
+                            <div class="rounded-md bg-white p-4 shadow-sm">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Zahlen</p>
+                                <p class="mt-2 text-sm font-semibold text-gray-900">{{ $lastScrapeResult['numbers'] }}</p>
+                            </div>
+                            <div class="rounded-md bg-white p-4 shadow-sm">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Zusatz</p>
+                                <p class="mt-2 text-sm font-semibold text-gray-900">{{ $lastScrapeResult['bonus_numbers'] }}</p>
+                            </div>
+                        </div>
+
+                        <p class="mt-4 break-all text-xs text-emerald-800">
+                            Quelle: {{ $lastScrapeResult['source_url'] }}
+                        </p>
+                    </div>
+                @endif
 
                 <div class="rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
                     Der Scraper erwartet erkennbare Texte wie <strong>Gewinnzahlen</strong>, <strong>Superzahl</strong> oder <strong>Eurozahlen</strong> auf der Zielseite. Bei stark abweichendem HTML kann der Parser spaeter pro Anbieter erweitert werden.

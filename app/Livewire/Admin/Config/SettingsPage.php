@@ -7,6 +7,7 @@ use App\Models\LotteryDraw;
 use App\Models\LotteryImport;
 use App\Models\Setting;
 use App\Services\Lottery\LotteryCsvImportService;
+use App\Services\Lottery\LotteryDrawScrapingService;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -21,6 +22,8 @@ class SettingsPage extends Component
     public $csvFile = null;
 
     public ?array $lastImportSummary = null;
+
+    public ?array $lastScrapeResult = null;
 
     public string $lottoScrapingUrl = '';
 
@@ -38,19 +41,7 @@ class SettingsPage extends Component
 
     public function saveGameSettings(): void
     {
-        $validated = $this->validate([
-            'lottoScrapingUrl' => ['nullable', 'url', 'max:2048'],
-            'euroJackpotScrapingUrl' => ['nullable', 'url', 'max:2048'],
-        ]);
-
-        Setting::setValue('lottery', 'games', [
-            LotteryDraw::GAME_LOTTO_6AUS49 => [
-                'scraping_url' => trim((string) $validated['lottoScrapingUrl']),
-            ],
-            LotteryDraw::GAME_EUROJACKPOT => [
-                'scraping_url' => trim((string) $validated['euroJackpotScrapingUrl']),
-            ],
-        ]);
+        $this->persistGameSettings();
 
         session()->flash('success', 'Spiel-Einstellungen wurden gespeichert.');
     }
@@ -63,11 +54,8 @@ class SettingsPage extends Component
             return;
         }
 
-        $this->saveGameSettings();
-
-        $url = $game === LotteryDraw::GAME_LOTTO_6AUS49
-            ? $this->lottoScrapingUrl
-            : $this->euroJackpotScrapingUrl;
+        $this->persistGameSettings();
+        $url = $this->scrapingUrlFor($game);
 
         if (trim($url) === '') {
             session()->flash('error', 'Bitte zuerst eine Scraping-URL fuer '.(LotteryDraw::gameLabels()[$game] ?? $game).' hinterlegen.');
@@ -78,6 +66,43 @@ class SettingsPage extends Component
         ScrapeLotteryDraw::dispatch($game, trim($url));
 
         session()->flash('success', 'Scraping-Job fuer '.(LotteryDraw::gameLabels()[$game] ?? $game).' wurde gestartet.');
+    }
+
+    public function testScrapeGame(string $game): void
+    {
+        $this->lastScrapeResult = null;
+
+        if (! array_key_exists($game, LotteryDraw::gameLabels())) {
+            session()->flash('error', 'Unbekannte Spielart.');
+
+            return;
+        }
+
+        $this->persistGameSettings();
+        $url = $this->scrapingUrlFor($game);
+
+        if (trim($url) === '') {
+            session()->flash('error', 'Bitte zuerst eine Scraping-URL fuer '.(LotteryDraw::gameLabels()[$game] ?? $game).' hinterlegen.');
+
+            return;
+        }
+
+        try {
+            $draw = app(LotteryDrawScrapingService::class)->scrapeGame($game, trim($url));
+
+            $this->lastScrapeResult = [
+                'game' => LotteryDraw::gameLabels()[$draw->game] ?? $draw->game,
+                'draw_date' => $draw->draw_date?->format('d.m.Y'),
+                'numbers' => implode(' - ', $draw->numbers ?? []),
+                'bonus_numbers' => $this->formatBonusNumbers($draw->bonus_numbers ?? []),
+                'source_url' => $url,
+                'stored_at' => now()->format('d.m.Y H:i:s'),
+            ];
+
+            session()->flash('success', 'Direkter Scrape fuer '.(LotteryDraw::gameLabels()[$game] ?? $game).' war erfolgreich.');
+        } catch (Throwable $exception) {
+            session()->flash('error', 'Direkter Scrape fehlgeschlagen: '.$exception->getMessage());
+        }
     }
 
     public function importCsv(LotteryCsvImportService $importer): void
@@ -129,5 +154,48 @@ class SettingsPage extends Component
 
         $this->lottoScrapingUrl = trim((string) ($settings[LotteryDraw::GAME_LOTTO_6AUS49]['scraping_url'] ?? ''));
         $this->euroJackpotScrapingUrl = trim((string) ($settings[LotteryDraw::GAME_EUROJACKPOT]['scraping_url'] ?? ''));
+    }
+
+    protected function persistGameSettings(): void
+    {
+        $validated = $this->validate([
+            'lottoScrapingUrl' => ['nullable', 'url', 'max:2048'],
+            'euroJackpotScrapingUrl' => ['nullable', 'url', 'max:2048'],
+        ]);
+
+        Setting::setValue('lottery', 'games', [
+            LotteryDraw::GAME_LOTTO_6AUS49 => [
+                'scraping_url' => trim((string) $validated['lottoScrapingUrl']),
+            ],
+            LotteryDraw::GAME_EUROJACKPOT => [
+                'scraping_url' => trim((string) $validated['euroJackpotScrapingUrl']),
+            ],
+        ]);
+    }
+
+    protected function scrapingUrlFor(string $game): string
+    {
+        return $game === LotteryDraw::GAME_LOTTO_6AUS49
+            ? $this->lottoScrapingUrl
+            : $this->euroJackpotScrapingUrl;
+    }
+
+    protected function formatBonusNumbers(array $bonusNumbers): string
+    {
+        if (array_key_exists('superzahl', $bonusNumbers)) {
+            return 'Superzahl: '.($bonusNumbers['superzahl'] ?? '-');
+        }
+
+        if (array_key_exists('euro_numbers', $bonusNumbers)) {
+            return 'Eurozahlen: '.implode(' - ', $bonusNumbers['euro_numbers'] ?? []);
+        }
+
+        if ($bonusNumbers === []) {
+            return '-';
+        }
+
+        return collect($bonusNumbers)
+            ->map(fn ($value, string $key) => $key.': '.(is_array($value) ? implode(' - ', $value) : $value))
+            ->implode(' | ');
     }
 }

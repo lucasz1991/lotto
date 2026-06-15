@@ -3,11 +3,13 @@
 namespace Tests\Feature;
 
 use App\Jobs\ScrapeLotteryDraw;
+use App\Livewire\Admin\Config\SettingsPage;
 use App\Models\LotteryDraw;
 use App\Models\Setting;
 use App\Services\Lottery\LotteryDrawScrapingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class LotteryDrawScrapingTest extends TestCase
@@ -65,5 +67,25 @@ class LotteryDrawScrapingTest extends TestCase
         $draw = LotteryDraw::query()->where('game', LotteryDraw::GAME_LOTTO_6AUS49)->firstOrFail();
 
         $this->assertSame('2026-06-13', $draw->draw_date->toDateString());
+    }
+
+    public function test_settings_page_can_run_direct_scrape_and_show_result(): void
+    {
+        Http::fake([
+            'https://example.test/lotto' => Http::response('Ziehung vom 13.06.2026 Gewinnzahlen 1 2 3 4 5 6 Superzahl 0'),
+        ]);
+
+        Livewire::test(SettingsPage::class)
+            ->set('lottoScrapingUrl', 'https://example.test/lotto')
+            ->call('testScrapeGame', LotteryDraw::GAME_LOTTO_6AUS49)
+            ->assertSet('lastScrapeResult.game', 'Lotto 6aus49')
+            ->assertSet('lastScrapeResult.draw_date', '13.06.2026')
+            ->assertSet('lastScrapeResult.numbers', '1 - 2 - 3 - 4 - 5 - 6')
+            ->assertSet('lastScrapeResult.bonus_numbers', 'Superzahl: 0');
+
+        $this->assertDatabaseHas('lottery_draws', [
+            'game' => LotteryDraw::GAME_LOTTO_6AUS49,
+            'source_file' => 'https://example.test/lotto',
+        ]);
     }
 }
