@@ -18,7 +18,7 @@
                 $isEuroJackpot = $game === \App\Models\LotteryDraw::GAME_EUROJACKPOT;
             @endphp
 
-            <section x-data="{ statsModal: null }" class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+            <section class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
                 <div class="border-b border-gray-200 bg-gray-50 px-4 py-4 sm:px-5">
                     <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                         <div class="min-w-0">
@@ -125,7 +125,7 @@
                         <div class="grid gap-3 sm:grid-cols-2">
                             <button
                                 type="button"
-                                x-on:click="statsModal = 'main'"
+                                wire:click="openStatsModal('{{ $game }}', 'main')"
                                 class="flex items-center justify-between gap-3 rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-left hover:border-blue-200 hover:bg-blue-50"
                             >
                                 <span class="flex min-w-0 items-center gap-3">
@@ -142,7 +142,7 @@
 
                             <button
                                 type="button"
-                                x-on:click="statsModal = 'bonus'"
+                                wire:click="openStatsModal('{{ $game }}', 'bonus')"
                                 class="flex items-center justify-between gap-3 rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-left hover:border-amber-200 hover:bg-amber-50"
                             >
                                 <span class="flex min-w-0 items-center gap-3">
@@ -158,83 +158,56 @@
                             </button>
                         </div>
                     </div>
-
-                    <div
-                        x-show="statsModal"
-                        x-cloak
-                        x-transition.opacity
-                        x-on:keydown.escape.window="statsModal = null"
-                        class="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-0 sm:items-center sm:p-6"
-                    >
-                        <div class="absolute inset-0" x-on:click="statsModal = null"></div>
-
-                        <div class="relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-lg bg-white shadow-xl sm:max-w-3xl sm:rounded-lg">
-                            <div class="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-4">
-                                <div>
-                                    <h3 class="text-lg font-semibold text-gray-900" x-text="statsModal === 'main' ? 'Hauptzahlen' : '{{ $isEuroJackpot ? 'Eurozahlen' : 'Superzahl' }}'"></h3>
-                                    <p class="mt-1 text-sm text-gray-500">{{ $recommendation['label'] }} - {{ $recommendation['method_label'] }}</p>
-                                </div>
-                                <button
-                                    type="button"
-                                    x-on:click="statsModal = null"
-                                    class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
-                                    title="Schliessen"
-                                >
-                                    <i class="mdi mdi-close text-xl"></i>
-                                </button>
-                            </div>
-
-                            <div class="overflow-y-auto">
-                                <div x-show="statsModal === 'main'">
-                                    <table class="min-w-full divide-y divide-gray-100 text-sm">
-                                        <thead class="sticky top-0 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                            <tr>
-                                                <th class="px-5 py-3">Zahl</th>
-                                                <th class="px-5 py-3">Gesamt</th>
-                                                <th class="px-5 py-3">Letzte 50</th>
-                                                <th class="px-5 py-3">Faellig</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-gray-100 bg-white">
-                                            @foreach ($recommendation['main_stats'] as $stat)
-                                                <tr class="hover:bg-gray-50">
-                                                    <td class="px-5 py-3 font-semibold text-gray-900">{{ $stat['number'] }}</td>
-                                                    <td class="px-5 py-3 text-gray-600">{{ $stat['frequency'] }}</td>
-                                                    <td class="px-5 py-3 text-gray-600">{{ $stat['recent_frequency'] }}</td>
-                                                    <td class="px-5 py-3 text-gray-600">{{ $stat['missed_draws'] }}</td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                <div x-show="statsModal === 'bonus'">
-                                    <table class="min-w-full divide-y divide-gray-100 text-sm">
-                                        <thead class="sticky top-0 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                            <tr>
-                                                <th class="px-5 py-3">Zahl</th>
-                                                <th class="px-5 py-3">Gesamt</th>
-                                                <th class="px-5 py-3">Letzte 50</th>
-                                                <th class="px-5 py-3">Faellig</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-gray-100 bg-white">
-                                            @foreach ($recommendation['bonus_stats'] as $stat)
-                                                <tr class="hover:bg-gray-50">
-                                                    <td class="px-5 py-3 font-semibold text-gray-900">{{ $stat['number'] }}</td>
-                                                    <td class="px-5 py-3 text-gray-600">{{ $stat['frequency'] }}</td>
-                                                    <td class="px-5 py-3 text-gray-600">{{ $stat['recent_frequency'] }}</td>
-                                                    <td class="px-5 py-3 text-gray-600">{{ $stat['missed_draws'] }}</td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 @endif
             </section>
         @endforeach
     </div>
+
+    <x-dialog-modal wire:model.live="statsModalOpen" maxWidth="3xl">
+        <x-slot name="title">
+            <div>
+                <div>{{ $selectedStatsModal['title'] ?? 'Statistik' }}</div>
+                @if ($selectedStatsModal)
+                    <div class="mt-1 text-sm font-normal text-gray-500">{{ $selectedStatsModal['subtitle'] }}</div>
+                @endif
+            </div>
+        </x-slot>
+
+        <x-slot name="content">
+            @if ($selectedStatsModal)
+                <div class="-mx-6 -my-4 max-h-[70vh] overflow-y-auto">
+                    <table class="min-w-full divide-y divide-gray-100 text-sm">
+                        <thead class="sticky top-0 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            <tr>
+                                <th class="px-5 py-3">Zahl</th>
+                                <th class="px-5 py-3">Gesamt</th>
+                                <th class="px-5 py-3">Letzte 50</th>
+                                <th class="px-5 py-3">Faellig</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 bg-white">
+                            @foreach ($selectedStatsModal['stats'] as $stat)
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-5 py-3 font-semibold text-gray-900">{{ $stat['number'] }}</td>
+                                    <td class="px-5 py-3 text-gray-600">{{ $stat['frequency'] }}</td>
+                                    <td class="px-5 py-3 text-gray-600">{{ $stat['recent_frequency'] }}</td>
+                                    <td class="px-5 py-3 text-gray-600">{{ $stat['missed_draws'] }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </x-slot>
+
+        <x-slot name="footer">
+            <button
+                type="button"
+                wire:click="closeStatsModal"
+                class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            >
+                Schliessen
+            </button>
+        </x-slot>
+    </x-dialog-modal>
 </div>
