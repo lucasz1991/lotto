@@ -38,7 +38,9 @@ class LotteryRecommendationTest extends TestCase
             'bonus_numbers' => ['euro_numbers' => [1, 3]],
         ]);
 
-        $recommendations = app(LotteryRecommendationService::class)->recommendations();
+        $recommendations = app(LotteryRecommendationService::class)->recommendations([
+            'method' => LotteryRecommendationService::METHOD_BALANCED,
+        ]);
 
         $this->assertCount(6, $recommendations[LotteryDraw::GAME_LOTTO_6AUS49]['main_numbers']);
         $this->assertCount(1, $recommendations[LotteryDraw::GAME_LOTTO_6AUS49]['bonus_numbers']);
@@ -79,5 +81,43 @@ class LotteryRecommendationTest extends TestCase
         $this->assertCount(6, $lotto['rows'][0]['main_numbers']);
         $this->assertGreaterThanOrEqual(13, min($lotto['rows'][0]['main_numbers']));
         $this->assertSame(2, $lotto['main_stats'][0]['missed_draws']);
+    }
+
+    public function test_default_recommendation_method_is_rare_and_games_can_use_separate_options(): void
+    {
+        LotteryDraw::query()->create([
+            'game' => LotteryDraw::GAME_LOTTO_6AUS49,
+            'draw_date' => '2026-06-01',
+            'numbers' => [1, 2, 3, 4, 5, 6],
+            'bonus_numbers' => ['superzahl' => 1],
+        ]);
+        LotteryDraw::query()->create([
+            'game' => LotteryDraw::GAME_EUROJACKPOT,
+            'draw_date' => '2026-06-01',
+            'numbers' => [1, 2, 3, 4, 5],
+            'bonus_numbers' => ['euro_numbers' => [1, 2]],
+        ]);
+
+        $defaultRecommendations = app(LotteryRecommendationService::class)->recommendations();
+
+        $this->assertSame(LotteryRecommendationService::METHOD_RARE, $defaultRecommendations[LotteryDraw::GAME_LOTTO_6AUS49]['method']);
+
+        $recommendations = app(LotteryRecommendationService::class)->recommendationsForGames([
+            LotteryDraw::GAME_LOTTO_6AUS49 => [
+                'method' => LotteryRecommendationService::METHOD_RARE,
+                'row_count' => 2,
+                'stats_limit' => 10,
+            ],
+            LotteryDraw::GAME_EUROJACKPOT => [
+                'method' => LotteryRecommendationService::METHOD_HOT,
+                'row_count' => 1,
+                'stats_limit' => 10,
+            ],
+        ]);
+
+        $this->assertSame(LotteryRecommendationService::METHOD_RARE, $recommendations[LotteryDraw::GAME_LOTTO_6AUS49]['method']);
+        $this->assertSame(LotteryRecommendationService::METHOD_HOT, $recommendations[LotteryDraw::GAME_EUROJACKPOT]['method']);
+        $this->assertCount(2, $recommendations[LotteryDraw::GAME_LOTTO_6AUS49]['rows']);
+        $this->assertCount(1, $recommendations[LotteryDraw::GAME_EUROJACKPOT]['rows']);
     }
 }

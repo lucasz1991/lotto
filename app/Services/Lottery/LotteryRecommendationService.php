@@ -19,7 +19,7 @@ class LotteryRecommendationService
 
     public function recommendations(array $options = []): array
     {
-        $method = $this->normalizeMethod($options['method'] ?? self::METHOD_BALANCED);
+        $method = $this->normalizeMethod($options['method'] ?? self::METHOD_RARE);
         $rowCount = $this->clampInt($options['row_count'] ?? 1, 1, 10);
         $statsLimit = $this->clampInt($options['stats_limit'] ?? 12, 5, 50);
 
@@ -47,6 +47,48 @@ class LotteryRecommendationService
                 statsLimit: $statsLimit,
             ),
         ];
+    }
+
+    public function recommendationsForGames(array $gameOptions): array
+    {
+        $gameOptions = $this->normalizeGameOptions($gameOptions);
+        $recommendations = [];
+
+        foreach (array_keys(LotteryDraw::gameLabels()) as $game) {
+            $recommendations[$game] = $this->recommendations($gameOptions[$game])[$game];
+        }
+
+        return $recommendations;
+    }
+
+    public function defaultGameOptions(): array
+    {
+        return collect(array_keys(LotteryDraw::gameLabels()))
+            ->mapWithKeys(fn (string $game): array => [
+                $game => [
+                    'method' => self::METHOD_RARE,
+                    'row_count' => 3,
+                    'stats_limit' => 12,
+                ],
+            ])
+            ->all();
+    }
+
+    public function normalizeGameOptions(array $gameOptions): array
+    {
+        $defaults = $this->defaultGameOptions();
+
+        foreach ($defaults as $game => $defaultOptions) {
+            $options = is_array($gameOptions[$game] ?? null) ? $gameOptions[$game] : [];
+
+            $defaults[$game] = [
+                'method' => $this->normalizeMethod($options['method'] ?? $defaultOptions['method']),
+                'row_count' => $this->clampInt($options['row_count'] ?? $defaultOptions['row_count'], 1, 10),
+                'stats_limit' => $this->clampInt($options['stats_limit'] ?? $defaultOptions['stats_limit'], 5, 50),
+            ];
+        }
+
+        return $defaults;
     }
 
     public function methodLabels(): array
@@ -279,7 +321,7 @@ class LotteryRecommendationService
     {
         $method = (string) $method;
 
-        return array_key_exists($method, $this->methodLabels()) ? $method : self::METHOD_BALANCED;
+        return array_key_exists($method, $this->methodLabels()) ? $method : self::METHOD_RARE;
     }
 
     protected function clampInt(mixed $value, int $min, int $max): int

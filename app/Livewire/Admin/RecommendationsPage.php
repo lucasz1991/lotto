@@ -7,27 +7,28 @@ use Livewire\Component;
 
 class RecommendationsPage extends Component
 {
-    public string $method = LotteryRecommendationService::METHOD_BALANCED;
+    public array $gameOptions = [];
 
-    public int $rowCount = 3;
-
-    public int $statsLimit = 12;
+    public function mount(LotteryRecommendationService $recommendations): void
+    {
+        $this->gameOptions = collect($recommendations->defaultGameOptions())
+            ->map(fn (array $options): array => [
+                'method' => $options['method'],
+                'row_count' => $options['row_count'],
+                'stats_limit' => $options['stats_limit'],
+            ])
+            ->all();
+    }
 
     public function render(LotteryRecommendationService $recommendations)
     {
-        $this->method = array_key_exists($this->method, $recommendations->methodLabels())
-            ? $this->method
-            : LotteryRecommendationService::METHOD_BALANCED;
-        $this->rowCount = max(1, min(10, (int) $this->rowCount));
-        $this->statsLimit = max(5, min(50, (int) $this->statsLimit));
+        $this->gameOptions = $recommendations->normalizeGameOptions($this->gameOptions);
 
         return view('livewire.admin.recommendations-page', [
             'methodLabels' => $recommendations->methodLabels(),
-            'recommendations' => $recommendations->recommendations([
-                'method' => $this->method,
-                'row_count' => $this->rowCount,
-                'stats_limit' => $this->statsLimit,
-            ]),
+            'recommendations' => $recommendations->recommendationsForGames($this->gameOptions),
+            'rowCountOptions' => [1, 2, 3, 4, 5, 6, 8, 10],
+            'statsLimitOptions' => [10, 12, 20, 30, 40, 50],
         ])->layout('layouts.master');
     }
 }
