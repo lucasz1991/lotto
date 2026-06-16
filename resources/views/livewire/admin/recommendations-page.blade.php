@@ -3,22 +3,8 @@
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-semibold text-gray-900">Empfehlungen</h1>
-                <p class="mt-1 text-sm text-gray-500">
-                    Je Spielart getrennt konfigurierbare Felder, Auswertungsart und Statistik-Tiefe.
-                </p>
             </div>
 
-            <div class="flex flex-wrap gap-2 text-xs font-semibold text-gray-600">
-                <span class="rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
-                    Standard: Selten gezogen
-                </span>
-                <span class="rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
-                    Top 50
-                </span>
-                <span class="rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
-                    1 Feld
-                </span>
-            </div>
         </div>
     </div>
 
