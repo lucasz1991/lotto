@@ -156,7 +156,7 @@
                                         <div class="grid gap-3 sm:grid-cols-[80px_1fr] sm:items-center">
                                             <div class="inline-flex w-max items-center gap-1.5 rounded-md bg-slate-100 px-2.5 py-1 text-sm font-semibold text-gray-700">
                                                 <i class="mdi mdi-view-grid-outline text-base text-gray-500"></i>
-                                                Feld {{ $index + 1 }}
+                                                {{ $index + 1 }}
                                             </div>
                                             <div class="flex flex-wrap gap-2">
                                                 @foreach ($row['main_numbers'] as $number)
