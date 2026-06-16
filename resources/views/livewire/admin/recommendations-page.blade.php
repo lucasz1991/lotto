@@ -70,7 +70,7 @@
 
                         </div>
 
-                        <div class="flex gap-2 xl:min-w-[520px]">
+                        <div class="flex gap-2 xl:min-w-[420px]">
                             <div class="min-w-0 flex-1">
                                 <x-ui.forms.select
                                     model="gameOptions.{{ $game }}.method"
