@@ -46,7 +46,7 @@ $maxWidth = [
         <button
             type="button"
             x-on:click="show = false"
-            class="absolute right-3 top-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            class="absolute right-3 top-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
             aria-label="Modal schliessen"
         >
             <i class="mdi mdi-close text-xl"></i>
