@@ -48,7 +48,7 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-3 gap-2 xl:min-w-[520px]">
+                        <div class="grid grid-cols-2 gap-2 xl:min-w-[520px]">
                             <x-ui.forms.select
                                 model="gameOptions.{{ $game }}.method"
                                 :value="$gameOptions[$game]['method']"
@@ -65,13 +65,6 @@
                                 compact-mobile
                             />
 
-                            <x-ui.forms.select
-                                model="gameOptions.{{ $game }}.stats_limit"
-                                :value="$gameOptions[$game]['stats_limit']"
-                                :options="$statsLimitSelectOptions"
-                                title="Anzahl Statistikzeilen"
-                                compact-mobile
-                            />
                         </div>
                     </div>
                 </div>
