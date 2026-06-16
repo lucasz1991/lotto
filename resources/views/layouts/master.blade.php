@@ -15,7 +15,6 @@
     @yield('css')
 </head>
     <body data-mode="light" data-sidebar-size="lg" class="group font-notosans">
-        <x-ui.loading.livewire-indicator />
         <!-- sidebar -->
         @include('layouts.sidebar')
         <!-- topbar -->
@@ -29,6 +28,7 @@
                     <div class="min-h-screen page-content px-1" style="box-shadow: inset 0px 80px 30px -10px rgba(0, 0, 0, 0.2);">
                         <div class="container-fluid px-0 md:px-5">
                             <div class=" @if(! request()->routeIs('admin.index', 'admin.recommendations')) bg-white rounded-md border border-gray-200 p-4  @endif ">
+                                <x-ui.loading.livewire-indicator />
                                 {{ $slot }}
                             </div>
                         </div>
