@@ -15,15 +15,56 @@ class NumberCheckPage extends Component
 
     public string $label = '';
 
-    public string $mainNumbersInput = '';
+    public array $selectedMainNumbers = [];
 
-    public string $bonusNumbersInput = '';
+    public array $selectedBonusNumbers = [];
 
     public ?array $currentAnalysis = null;
 
     public function updatedGame(): void
     {
-        $this->reset(['mainNumbersInput', 'bonusNumbersInput', 'currentAnalysis']);
+        $this->reset(['selectedMainNumbers', 'selectedBonusNumbers', 'currentAnalysis']);
+    }
+
+    public function toggleMainNumber(int $number): void
+    {
+        $requirements = $this->requirements();
+
+        if ($number < $requirements['main_min'] || $number > $requirements['main_max']) {
+            return;
+        }
+
+        if (in_array($number, $this->selectedMainNumbers, true)) {
+            $this->selectedMainNumbers = array_values(array_diff($this->selectedMainNumbers, [$number]));
+        } elseif (count($this->selectedMainNumbers) < $requirements['main_count']) {
+            $this->selectedMainNumbers[] = $number;
+        }
+
+        sort($this->selectedMainNumbers);
+        $this->currentAnalysis = null;
+    }
+
+    public function toggleBonusNumber(int $number): void
+    {
+        $requirements = $this->requirements();
+
+        if ($number < $requirements['bonus_min'] || $number > $requirements['bonus_max']) {
+            return;
+        }
+
+        if (in_array($number, $this->selectedBonusNumbers, true)) {
+            $this->selectedBonusNumbers = array_values(array_diff($this->selectedBonusNumbers, [$number]));
+        } elseif (count($this->selectedBonusNumbers) < $requirements['bonus_count']) {
+            $this->selectedBonusNumbers[] = $number;
+        }
+
+        sort($this->selectedBonusNumbers);
+        $this->currentAnalysis = null;
+    }
+
+    public function clearSelection(): void
+    {
+        $this->reset(['selectedMainNumbers', 'selectedBonusNumbers', 'currentAnalysis']);
     }
 
     public function analyze(LotteryRecommendationService $service): void
@@ -76,6 +117,8 @@ class NumberCheckPage extends Component
                 ->limit(20)
                 ->get(),
             'requirements' => $this->requirements(),
+            'mainRange' => range($this->requirements()['main_min'], $this->requirements()['main_max']),
+            'bonusRange' => range($this->requirements()['bonus_min'], $this->requirements()['bonus_max']),
         ])->layout('layouts.master', ['title' => 'Zahlencheck']);
     }
 
@@ -84,36 +127,25 @@ class NumberCheckPage extends Component
         $this->validate([
             'game' => ['required', 'in:'.implode(',', array_keys(LotteryDraw::gameLabels()))],
             'label' => ['nullable', 'string', 'max:80'],
-            'mainNumbersInput' => ['required', 'string'],
-            'bonusNumbersInput' => ['required', 'string'],
         ]);
 
-        $mainNumbers = $this->parseNumbers($this->mainNumbersInput);
-        $bonusNumbers = $this->parseNumbers($this->bonusNumbersInput);
+        $mainNumbers = array_map('intval', $this->selectedMainNumbers);
+        $bonusNumbers = array_map('intval', $this->selectedBonusNumbers);
+        sort($mainNumbers);
+        sort($bonusNumbers);
         $requirements = $this->requirements();
 
-        $this->assertNumberSet($mainNumbers, $requirements['main_count'], $requirements['main_min'], $requirements['main_max'], 'mainNumbersInput');
-        $this->assertNumberSet($bonusNumbers, $requirements['bonus_count'], $requirements['bonus_min'], $requirements['bonus_max'], 'bonusNumbersInput');
+        $this->assertNumberSet($mainNumbers, $requirements['main_count'], $requirements['main_min'], $requirements['main_max'], 'selectedMainNumbers');
+        $this->assertNumberSet($bonusNumbers, $requirements['bonus_count'], $requirements['bonus_min'], $requirements['bonus_max'], 'selectedBonusNumbers');
 
         return [$mainNumbers, $bonusNumbers];
     }
 
-    protected function parseNumbers(string $input): array
-    {
-        $numbers = preg_split('/[^0-9]+/', $input, -1, PREG_SPLIT_NO_EMPTY);
-
-        $numbers = array_map('intval', $numbers ?: []);
-        $numbers = array_values(array_unique($numbers));
-        sort($numbers);
-
-        return $numbers;
-    }
-
     protected function assertNumberSet(array $numbers, int $count, int $min, int $max, string $field): void
     {
-        if (count($numbers) !== $count) {
+        if (count($numbers) !== $count || count(array_unique($numbers)) !== $count) {
             throw ValidationException::withMessages([
-                $field => 'Bitte genau '.$count.' unterschiedliche Zahlen eingeben.',
+                $field => 'Bitte genau '.$count.' unterschiedliche Zahlen auswaehlen.',
             ]);
         }
 

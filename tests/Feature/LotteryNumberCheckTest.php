@@ -37,8 +37,8 @@ class LotteryNumberCheckTest extends TestCase
 
         Livewire::test(NumberCheckPage::class)
             ->set('label', 'Testreihe')
-            ->set('mainNumbersInput', '1, 2, 3, 4, 5, 6')
-            ->set('bonusNumbersInput', '7')
+            ->set('selectedMainNumbers', [1, 2, 3, 4, 5, 6])
+            ->set('selectedBonusNumbers', [7])
             ->call('analyze')
             ->assertSet('currentAnalysis.main_numbers', [1, 2, 3, 4, 5, 6])
             ->call('save');
