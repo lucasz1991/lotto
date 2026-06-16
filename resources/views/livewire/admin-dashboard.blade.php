@@ -105,15 +105,11 @@
                             <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Letzte Ziehung {{ $summary['latest_draw_date']?->format('d.m.Y') }}</p>
                             <div class="mt-3 flex flex-wrap gap-2">
                                 @foreach ($summary['latest_numbers'] as $number)
-                                    <span class="inline-flex h-10 min-w-10 items-center justify-center rounded-full {{ $isEuroJackpot ? 'bg-emerald-600' : 'bg-blue-600' }} px-3 text-sm font-bold text-white shadow-sm">
-                                        {{ $number }}
-                                    </span>
+                                    <x-ui.lottery.number-ball :number="$number" :game="$summary['game']" />
                                 @endforeach
 
                                 @foreach ($bonus as $number)
-                                    <span class="inline-flex h-10 min-w-10 items-center justify-center rounded-full bg-amber-400 px-3 text-sm font-bold text-gray-900 shadow-sm">
-                                        {{ $number }}
-                                    </span>
+                                    <x-ui.lottery.number-ball :number="$number" :game="$summary['game']" bonus />
                                 @endforeach
                             </div>
                         </div>
@@ -167,15 +163,11 @@
                                 <td class="px-5 py-3">
                                     <div class="flex min-w-[220px] flex-wrap gap-1.5">
                                         @foreach ($draw->numbers ?? [] as $number)
-                                            <span class="inline-flex h-7 min-w-7 items-center justify-center rounded-full {{ $isEuroJackpot ? 'bg-emerald-600' : 'bg-blue-600' }} px-2 text-xs font-bold text-white">
-                                                {{ $number }}
-                                            </span>
+                                            <x-ui.lottery.number-ball :number="$number" :game="$draw->game" size="xs" />
                                         @endforeach
 
                                         @foreach ($bonus as $number)
-                                            <span class="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-amber-400 px-2 text-xs font-bold text-gray-900">
-                                                {{ $number }}
-                                            </span>
+                                            <x-ui.lottery.number-ball :number="$number" :game="$draw->game" size="xs" bonus />
                                         @endforeach
                                     </div>
                                 </td>

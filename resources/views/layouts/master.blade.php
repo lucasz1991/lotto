@@ -4,7 +4,11 @@
 <head>
     @include('layouts.metahead')
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title') | Lotto</title>
+    @php($pageTitle = trim((string) ($title ?? $__env->yieldContent('title'))))
+    <title>{{ $pageTitle !== '' ? $pageTitle.' | ' : '' }}Lotto</title>
+    <link rel="icon" type="image/png" href="{{ asset('/site-images/icon.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('/site-images/favicon/apple-touch-icon.png') }}">
+    <link rel="shortcut icon" href="{{ asset('/site-images/favicon/favicon.ico') }}">
     <!-- css files -->
     @include('layouts.head-css')
     @vite(['resources/css/app.css'])

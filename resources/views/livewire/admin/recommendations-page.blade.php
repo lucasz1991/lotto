@@ -1,4 +1,25 @@
-<div class="space-y-5">
+<div class="space-y-6">
+    <div class="rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div class="flex flex-wrap items-start justify-between gap-4 px-5 py-5">
+            <div class="min-w-0">
+                <h1 class="text-2xl font-semibold text-gray-900">Empfehlungen</h1>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                    Zahlenreihen je Spielart, Auswertungsart und Verteilungsstrategie.
+                </p>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('admin.history') }}" class="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
+                    <i class="mdi mdi-history text-lg"></i>
+                    Historie
+                </a>
+                <a href="{{ route('admin.settings') }}" class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">
+                    <i class="mdi mdi-cog-outline text-lg"></i>
+                    Einstellungen
+                </a>
+            </div>
+        </div>
+    </div>
 
     <div class="grid grid-cols-2 gap-2 rounded-lg border border-gray-200 bg-white p-1 shadow-sm 2xl:hidden">
         @foreach ($recommendations as $recommendation)
@@ -10,7 +31,7 @@
             <button
                 type="button"
                 wire:click="showMobileGame('{{ $game }}')"
-                class="flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold {{ $activeMobileGame === $game ? ($isEuroJackpot ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white') : 'text-gray-600 hover:bg-gray-50' }}"
+                class="flex items-center justify-center gap-2 rounded-md px-3 py-2.5 text-sm font-semibold {{ $activeMobileGame === $game ? ($isEuroJackpot ? 'bg-emerald-600 text-white shadow-sm' : 'bg-blue-600 text-white shadow-sm') : 'text-gray-600 hover:bg-gray-50' }}"
             >
                 <span class="inline-flex h-6 w-6 items-center justify-center rounded {{ $activeMobileGame === $game ? 'bg-white/20' : ($isEuroJackpot ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white') }} text-xs font-bold">
                     {{ $isEuroJackpot ? 'EJ' : '6' }}
@@ -27,8 +48,8 @@
                 $isEuroJackpot = $game === \App\Models\LotteryDraw::GAME_EUROJACKPOT;
             @endphp
 
-            <section class="{{ $activeMobileGame === $game ? 'block' : 'hidden' }} rounded-lg border border-gray-200 bg-white shadow-sm 2xl:block">
-                <div class="border-t-4 {{ $isEuroJackpot ? 'border-t-emerald-500' : 'border-t-blue-500' }} px-4 py-4 sm:px-5">
+            <section class="{{ $activeMobileGame === $game ? 'block' : 'hidden' }} overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm 2xl:block">
+                <div class="border-t-4 {{ $isEuroJackpot ? 'border-t-emerald-500 bg-emerald-50/40' : 'border-t-blue-500 bg-blue-50/40' }} px-4 py-4 sm:px-5">
                     <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                         <div class="min-w-0">
                             <div class="flex items-start gap-3">
@@ -45,6 +66,21 @@
                                         @endif
                                     </p>
                                 </div>
+                            </div>
+
+                            <div class="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
+                                <span class="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-gray-700 shadow-sm ring-1 ring-gray-200">
+                                    <i class="mdi mdi-chart-bell-curve-cumulative text-base text-gray-500"></i>
+                                    {{ $recommendation['method_label'] }}
+                                </span>
+                                <span class="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-gray-700 shadow-sm ring-1 ring-gray-200">
+                                    <i class="mdi mdi-call-split text-base text-gray-500"></i>
+                                    {{ $recommendation['reuse_strategy_label'] }}
+                                </span>
+                                <span class="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-gray-700 shadow-sm ring-1 ring-gray-200">
+                                    <i class="mdi mdi-shield-check-outline text-base text-gray-500"></i>
+                                    Datenbasis {{ $recommendation['confidence'] }}
+                                </span>
                             </div>
                         </div>
 
@@ -84,11 +120,14 @@
                     <div class="space-y-5 border-t border-gray-100 px-4 py-5 sm:px-5">
                         <div>
 
-                            <div class="mt-3 grid gap-3">
+                            <div class="grid gap-3">
                                 @foreach ($recommendation['rows'] as $index => $row)
-                                    <div class="rounded-md border border-gray-200 bg-gray-50 px-3 py-3 sm:px-4">
+                                    <div class="rounded-md border border-gray-200 bg-white px-3 py-3 shadow-sm transition hover:border-gray-300 hover:shadow-md sm:px-4">
                                         <div class="grid gap-3 sm:grid-cols-[80px_1fr] sm:items-center">
-                                            <div class="inline-flex w-max rounded-md bg-white px-2.5 py-1 text-sm font-semibold text-gray-600 shadow-sm">Feld {{ $index + 1 }}</div>
+                                            <div class="inline-flex w-max items-center gap-1.5 rounded-md bg-slate-100 px-2.5 py-1 text-sm font-semibold text-gray-700">
+                                                <i class="mdi mdi-view-grid-outline text-base text-gray-500"></i>
+                                                Feld {{ $index + 1 }}
+                                            </div>
                                             <div class="flex flex-wrap gap-2">
                                                 @foreach ($row['main_numbers'] as $number)
                                                     @php($stat = $row['main_number_stats'][$number] ?? [])
@@ -100,13 +139,12 @@
                                                         contentClasses="bg-white"
                                                     >
                                                         <x-slot name="trigger">
-                                                            <button
-                                                                type="button"
-                                                                class="inline-flex h-10 min-w-10 items-center justify-center rounded-full {{ $isEuroJackpot ? 'bg-emerald-600' : 'bg-blue-600' }} px-3 text-sm font-bold text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                                                                aria-label="Details zu Zahl {{ $number }}"
-                                                            >
-                                                                {{ $number }}
-                                                            </button>
+                                                            <x-ui.lottery.number-ball
+                                                                :number="$number"
+                                                                :game="$game"
+                                                                as="button"
+                                                                :label="'Details zu Zahl '.$number"
+                                                            />
                                                         </x-slot>
 
                                                         <x-slot name="content">
@@ -143,13 +181,13 @@
                                                         contentClasses="bg-white"
                                                     >
                                                         <x-slot name="trigger">
-                                                            <button
-                                                                type="button"
-                                                                class="inline-flex h-10 min-w-10 items-center justify-center rounded-full bg-amber-400 px-3 text-sm font-bold text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
-                                                                aria-label="Details zu Zusatzzahl {{ $number }}"
-                                                            >
-                                                                {{ $number }}
-                                                            </button>
+                                                            <x-ui.lottery.number-ball
+                                                                :number="$number"
+                                                                :game="$game"
+                                                                as="button"
+                                                                bonus
+                                                                :label="'Details zu Zusatzzahl '.$number"
+                                                            />
                                                         </x-slot>
 
                                                         <x-slot name="content">
@@ -248,7 +286,14 @@
                         <tbody class="divide-y divide-gray-100 bg-white">
                             @foreach ($selectedStatsModal['stats'] as $stat)
                                 <tr class="hover:bg-gray-50">
-                                    <td class="px-5 py-3 font-semibold text-gray-900">{{ $stat['number'] }}</td>
+                                    <td class="px-5 py-3">
+                                        <x-ui.lottery.number-ball
+                                            :number="$stat['number']"
+                                            :game="$selectedStatsModal['game']"
+                                            :bonus="$selectedStatsModal['is_bonus']"
+                                            size="xs"
+                                        />
+                                    </td>
                                     <td class="px-5 py-3 text-gray-600">{{ $stat['frequency'] }}</td>
                                     <td class="px-5 py-3 text-gray-600">{{ $stat['recent_frequency'] }}</td>
                                     <td class="px-5 py-3 text-gray-600">{{ $stat['missed_draws'] }}</td>

@@ -62,7 +62,7 @@ class HistoryPage extends Component
             'totalDraws' => (clone $query)->count(),
             'latestDraw' => (clone $query)->latest('draw_date')->first(),
             'oldestDraw' => (clone $query)->oldest('draw_date')->first(),
-        ])->layout('layouts.master');
+        ])->layout('layouts.master', ['title' => 'Historie']);
     }
 
     protected function sortableFields(): array

@@ -128,9 +128,7 @@
                             <td class="px-5 py-4">
                                 <div class="flex min-w-[220px] flex-wrap gap-1.5">
                                     @foreach ($draw->numbers ?? [] as $number)
-                                        <span class="inline-flex h-8 min-w-8 items-center justify-center rounded-full {{ $isEuroJackpot ? 'bg-emerald-600' : 'bg-blue-600' }} px-2 text-sm font-semibold text-white shadow-sm">
-                                            {{ $number }}
-                                        </span>
+                                        <x-ui.lottery.number-ball :number="$number" :game="$draw->game" size="sm" />
                                     @endforeach
                                 </div>
                             </td>
@@ -138,14 +136,19 @@
                                 @if ($isEuroJackpot)
                                     <div class="flex flex-wrap gap-1.5">
                                         @foreach (($draw->bonus_numbers['euro_numbers'] ?? []) as $number)
-                                            <span class="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-amber-400 px-2 text-sm font-semibold text-gray-900 shadow-sm">
-                                                {{ $number }}
-                                            </span>
+                                            <x-ui.lottery.number-ball :number="$number" :game="$draw->game" size="sm" bonus />
                                         @endforeach
                                     </div>
                                 @else
-                                    <div class="grid min-w-[180px] gap-1 text-xs text-gray-600">
-                                        <div>Superzahl <span class="font-semibold text-gray-900">{{ $draw->bonus_numbers['superzahl'] ?? '-' }}</span></div>
+                                    <div class="grid min-w-[180px] gap-2 text-xs text-gray-600">
+                                        <div class="flex items-center gap-2">
+                                            <span>Superzahl</span>
+                                            @if (($draw->bonus_numbers['superzahl'] ?? null) !== null)
+                                                <x-ui.lottery.number-ball :number="$draw->bonus_numbers['superzahl']" :game="$draw->game" size="xs" bonus />
+                                            @else
+                                                <span class="font-semibold text-gray-900">-</span>
+                                            @endif
+                                        </div>
                                         <div>Spiel77 <span class="font-semibold text-gray-900">{{ $draw->bonus_numbers['spiel77'] ?? '-' }}</span></div>
                                         <div>Super6 <span class="font-semibold text-gray-900">{{ $draw->bonus_numbers['super6'] ?? '-' }}</span></div>
                                     </div>

@@ -3,7 +3,11 @@
 
 <head>
     @include('layouts.metahead')
-    <title>@yield('title') | Lotto</title>
+    @php($pageTitle = trim((string) ($title ?? $__env->yieldContent('title'))))
+    <title>{{ $pageTitle !== '' ? $pageTitle.' | ' : '' }}Lotto</title>
+    <link rel="icon" type="image/png" href="{{ asset('/site-images/icon.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('/site-images/favicon/apple-touch-icon.png') }}">
+    <link rel="shortcut icon" href="{{ asset('/site-images/favicon/favicon.ico') }}">
     <!-- css -->
     @include('layouts.head-css')
     @livewireStyles

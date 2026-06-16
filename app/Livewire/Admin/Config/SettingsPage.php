@@ -220,7 +220,7 @@ class SettingsPage extends Component
             'gameLabels' => LotteryDraw::gameLabels(),
             'historicalYearOptions' => $this->historicalYearOptions ?: $this->fallbackHistoricalYearOptions(),
             'weekdayLabels' => app(LotteryScrapingSchedule::class)->weekdayLabels(),
-        ])->layout('layouts.master');
+        ])->layout('layouts.master', ['title' => 'Einstellungen']);
     }
 
     protected function loadHistoricalYearOptions(): void

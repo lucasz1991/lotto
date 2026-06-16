@@ -56,7 +56,7 @@ class AdminDashboard extends Component
             'latestScrapedDraw' => Schema::hasTable('lottery_draws')
                 ? LotteryDraw::query()->whereNull('lottery_import_id')->latest('updated_at')->first()
                 : null,
-        ])->layout('layouts.master');
+        ])->layout('layouts.master', ['title' => 'Dashboard']);
     }
 
     protected function buildGameSummaries(): array

@@ -48,7 +48,7 @@ class RecommendationsPage extends Component
             'rowCountSelectOptions' => $this->rowCountSelectOptions(),
             'statsLimitOptions' => [10, 12, 20, 30, 40, 50],
             'statsLimitSelectOptions' => $this->statsLimitSelectOptions(),
-        ])->layout('layouts.master');
+        ])->layout('layouts.master', ['title' => 'Empfehlungen']);
     }
 
     public function openStatsModal(string $game, string $type): void
@@ -87,6 +87,8 @@ class RecommendationsPage extends Component
         return [
             'title' => $isBonus ? ($isEuroJackpot ? 'Eurozahlen' : 'Superzahl') : 'Hauptzahlen',
             'subtitle' => $recommendation['label'].' - '.$recommendation['method_label'],
+            'game' => $recommendation['game'],
+            'is_bonus' => $isBonus,
             'stats' => $isBonus ? $recommendation['bonus_stats'] : $recommendation['main_stats'],
         ];
     }
