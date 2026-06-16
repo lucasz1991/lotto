@@ -191,13 +191,14 @@
         </x-slot>
 
         <x-slot name="footer">
-            <button
+            <x-buttons.button-basic
                 type="button"
                 wire:click="closeStatsModal"
-                class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                mode="basic"
+                size="sm"
             >
                 Schliessen
-            </button>
+            </x-buttons.button-basic>
         </x-slot>
     </x-dialog-modal>
 </div>
