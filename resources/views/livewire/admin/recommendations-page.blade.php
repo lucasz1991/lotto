@@ -112,7 +112,7 @@
                             </div>
                         </div>
 
-                        <div class="grid gap-3 sm:grid-cols-2">
+                        <div class="grid gap-3 grid-cols-2">
                             <button
                                 type="button"
                                 wire:click="openStatsModal('{{ $game }}', 'main')"
