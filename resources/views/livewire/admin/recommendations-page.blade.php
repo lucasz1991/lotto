@@ -76,10 +76,6 @@
                 @else
                     <div class="space-y-5 border-t border-gray-100 px-4 py-5 sm:px-5">
                         <div>
-                            <div class="flex items-center justify-between gap-3">
-                                <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-500">Empfohlene Felder</h3>
-                                <span class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800">{{ $isEuroJackpot ? 'Gelb = Eurozahlen' : 'Gelb = Superzahl' }}</span>
-                            </div>
 
                             <div class="mt-3 grid gap-3">
                                 @foreach ($recommendation['rows'] as $index => $row)
