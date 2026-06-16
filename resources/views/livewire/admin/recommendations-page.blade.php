@@ -84,14 +84,66 @@
                                             <div class="inline-flex w-max rounded-md bg-white px-2.5 py-1 text-sm font-semibold text-gray-600 shadow-sm">Feld {{ $index + 1 }}</div>
                                             <div class="flex flex-wrap gap-2">
                                                 @foreach ($row['main_numbers'] as $number)
-                                                    <span class="inline-flex h-10 min-w-10 items-center justify-center rounded-full {{ $isEuroJackpot ? 'bg-emerald-600' : 'bg-blue-600' }} px-3 text-sm font-bold text-white shadow-sm">
-                                                        {{ $number }}
+                                                    @php($stat = $row['main_number_stats'][$number] ?? [])
+                                                    <span class="group relative inline-flex">
+                                                        <button
+                                                            type="button"
+                                                            class="inline-flex h-10 min-w-10 items-center justify-center rounded-full {{ $isEuroJackpot ? 'bg-emerald-600' : 'bg-blue-600' }} px-3 text-sm font-bold text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                                            aria-label="Details zu Zahl {{ $number }}"
+                                                        >
+                                                            {{ $number }}
+                                                        </button>
+                                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-56 -translate-x-1/2 rounded-md border border-gray-200 bg-white p-3 text-left text-xs font-normal text-gray-600 shadow-lg group-hover:block group-focus-within:block">
+                                                            <span class="mb-2 block font-semibold text-gray-900">Zahl {{ $number }}</span>
+                                                            @if ($recommendation['method'] === \App\Services\Lottery\LotteryRecommendationService::METHOD_RARE)
+                                                                <span class="block">Nur {{ $stat['frequency'] ?? 0 }}x insgesamt gezogen.</span>
+                                                                <span class="block">Erwartet: {{ $stat['expected_frequency'] ?? '-' }}x.</span>
+                                                            @elseif ($recommendation['method'] === \App\Services\Lottery\LotteryRecommendationService::METHOD_OVERDUE)
+                                                                <span class="block">{{ $stat['missed_draws'] ?? 0 }} Ziehungen nicht gezogen.</span>
+                                                                <span class="block">Zuletzt: {{ ($stat['last_seen_date'] ?? null)?->format('d.m.Y') ?? 'noch nie' }}.</span>
+                                                            @elseif ($recommendation['method'] === \App\Services\Lottery\LotteryRecommendationService::METHOD_HOT)
+                                                                <span class="block">{{ $stat['frequency'] ?? 0 }}x insgesamt gezogen.</span>
+                                                                <span class="block">{{ $stat['recent_frequency'] ?? 0 }}x in den letzten 50 Ziehungen.</span>
+                                                            @elseif ($recommendation['method'] === \App\Services\Lottery\LotteryRecommendationService::METHOD_RECENT)
+                                                                <span class="block">{{ $stat['recent_frequency'] ?? 0 }}x in den letzten 50 Ziehungen.</span>
+                                                                <span class="block">Zuletzt: {{ ($stat['last_seen_date'] ?? null)?->format('d.m.Y') ?? 'noch nie' }}.</span>
+                                                            @else
+                                                                <span class="block">Score: {{ $stat['score'] ?? '-' }}.</span>
+                                                                <span class="block">{{ $stat['frequency'] ?? 0 }}x insgesamt, {{ $stat['missed_draws'] ?? 0 }} Ziehungen faellig.</span>
+                                                            @endif
+                                                        </span>
                                                     </span>
                                                 @endforeach
 
                                                 @foreach ($row['bonus_numbers'] as $number)
-                                                    <span class="inline-flex h-10 min-w-10 items-center justify-center rounded-full bg-amber-400 px-3 text-sm font-bold text-gray-900 shadow-sm">
-                                                        {{ $number }}
+                                                    @php($stat = $row['bonus_number_stats'][$number] ?? [])
+                                                    <span class="group relative inline-flex">
+                                                        <button
+                                                            type="button"
+                                                            class="inline-flex h-10 min-w-10 items-center justify-center rounded-full bg-amber-400 px-3 text-sm font-bold text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+                                                            aria-label="Details zu Zusatzzahl {{ $number }}"
+                                                        >
+                                                            {{ $number }}
+                                                        </button>
+                                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-56 -translate-x-1/2 rounded-md border border-gray-200 bg-white p-3 text-left text-xs font-normal text-gray-600 shadow-lg group-hover:block group-focus-within:block">
+                                                            <span class="mb-2 block font-semibold text-gray-900">{{ $isEuroJackpot ? 'Eurozahl' : 'Superzahl' }} {{ $number }}</span>
+                                                            @if ($recommendation['method'] === \App\Services\Lottery\LotteryRecommendationService::METHOD_RARE)
+                                                                <span class="block">Nur {{ $stat['frequency'] ?? 0 }}x insgesamt gezogen.</span>
+                                                                <span class="block">Erwartet: {{ $stat['expected_frequency'] ?? '-' }}x.</span>
+                                                            @elseif ($recommendation['method'] === \App\Services\Lottery\LotteryRecommendationService::METHOD_OVERDUE)
+                                                                <span class="block">{{ $stat['missed_draws'] ?? 0 }} Ziehungen nicht gezogen.</span>
+                                                                <span class="block">Zuletzt: {{ ($stat['last_seen_date'] ?? null)?->format('d.m.Y') ?? 'noch nie' }}.</span>
+                                                            @elseif ($recommendation['method'] === \App\Services\Lottery\LotteryRecommendationService::METHOD_HOT)
+                                                                <span class="block">{{ $stat['frequency'] ?? 0 }}x insgesamt gezogen.</span>
+                                                                <span class="block">{{ $stat['recent_frequency'] ?? 0 }}x in den letzten 50 Ziehungen.</span>
+                                                            @elseif ($recommendation['method'] === \App\Services\Lottery\LotteryRecommendationService::METHOD_RECENT)
+                                                                <span class="block">{{ $stat['recent_frequency'] ?? 0 }}x in den letzten 50 Ziehungen.</span>
+                                                                <span class="block">Zuletzt: {{ ($stat['last_seen_date'] ?? null)?->format('d.m.Y') ?? 'noch nie' }}.</span>
+                                                            @else
+                                                                <span class="block">Score: {{ $stat['score'] ?? '-' }}.</span>
+                                                                <span class="block">{{ $stat['frequency'] ?? 0 }}x insgesamt, {{ $stat['missed_draws'] ?? 0 }} Ziehungen faellig.</span>
+                                                            @endif
+                                                        </span>
                                                     </span>
                                                 @endforeach
                                             </div>

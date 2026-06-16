@@ -200,6 +200,7 @@ class LotteryRecommendationService
 
         foreach ($range as $number) {
             $missedDraws = $lastSeen[$number] ?? $totalDraws;
+            $lastSeenDraw = $lastSeen[$number] === null ? null : $draws->get($lastSeen[$number]);
             $score = ($frequency[$number] * 1.0)
                 + ($recentFrequency[$number] * 1.8)
                 + min(10, $missedDraws / 8)
@@ -211,6 +212,7 @@ class LotteryRecommendationService
                 'frequency' => $frequency[$number],
                 'recent_frequency' => $recentFrequency[$number],
                 'missed_draws' => $missedDraws,
+                'last_seen_date' => $lastSeenDraw?->draw_date,
                 'expected_frequency' => round($expectedFrequency, 3),
                 'frequency_gap' => round($expectedFrequency - $frequency[$number], 3),
             ];
@@ -248,9 +250,14 @@ class LotteryRecommendationService
         $seen = [];
 
         for ($rowIndex = 0; count($rows) < $rowCount && $rowIndex < $rowCount * 3; $rowIndex++) {
+            $mainNumbers = $this->selectNumbersForRow($mainStats, $mainPickCount, $rowIndex);
+            $bonusNumbers = $this->selectNumbersForRow($bonusStats, $bonusPickCount, $rowIndex);
+
             $row = [
-                'main_numbers' => $this->selectNumbersForRow($mainStats, $mainPickCount, $rowIndex),
-                'bonus_numbers' => $this->selectNumbersForRow($bonusStats, $bonusPickCount, $rowIndex),
+                'main_numbers' => $mainNumbers,
+                'bonus_numbers' => $bonusNumbers,
+                'main_number_stats' => $this->statsForNumbers($mainStats, $mainNumbers),
+                'bonus_number_stats' => $this->statsForNumbers($bonusStats, $bonusNumbers),
             ];
             $key = implode(',', $row['main_numbers']).'|'.implode(',', $row['bonus_numbers']);
 
@@ -263,6 +270,17 @@ class LotteryRecommendationService
         }
 
         return $rows;
+    }
+
+    protected function statsForNumbers(array $stats, array $numbers): array
+    {
+        $statsByNumber = collect($stats)->keyBy('number');
+
+        return collect($numbers)
+            ->mapWithKeys(fn (int $number): array => [
+                $number => $statsByNumber->get($number, []),
+            ])
+            ->all();
     }
 
     protected function selectNumbersForRow(array $stats, int $pickCount, int $rowIndex): array
