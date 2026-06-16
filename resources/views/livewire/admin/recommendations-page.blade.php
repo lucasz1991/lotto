@@ -40,47 +40,38 @@
                         </div>
 
                         <div class="grid gap-2 sm:grid-cols-3 xl:min-w-[520px]">
-                            <label class="relative block">
-                                <span class="sr-only">Auswertungsart</span>
-                                <i class="mdi mdi-chart-bell-curve-cumulative pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-lg text-gray-500"></i>
-                                <select
-                                    wire:model.live="gameOptions.{{ $game }}.method"
-                                    class="block h-10 w-full rounded-md border-gray-300 bg-white pl-9 pr-8 text-sm font-medium text-gray-800 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                    title="Auswertungsart"
-                                >
-                                    @foreach ($methodLabels as $value => $label)
-                                        <option value="{{ $value }}">{{ $label }}</option>
-                                    @endforeach
-                                </select>
-                            </label>
+                            <x-ui.forms.select wire:model.live="gameOptions.{{ $game }}.method" title="Auswertungsart">
+                                <x-slot name="icon">
+                                    <i class="mdi mdi-chart-bell-curve-cumulative text-lg"></i>
+                                </x-slot>
 
-                            <label class="relative block">
-                                <span class="sr-only">Felder</span>
-                                <i class="mdi mdi-view-grid-outline pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-lg text-gray-500"></i>
-                                <select
-                                    wire:model.live="gameOptions.{{ $game }}.row_count"
-                                    class="block h-10 w-full rounded-md border-gray-300 bg-white pl-9 pr-8 text-sm font-medium text-gray-800 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                    title="Anzahl Felder"
-                                >
-                                    @foreach ($rowCountOptions as $count)
-                                        <option value="{{ $count }}">{{ $count }} Felder</option>
-                                    @endforeach
-                                </select>
-                            </label>
+                                <option disabled>Auswertungsart</option>
+                                @foreach ($methodLabels as $value => $label)
+                                    <option value="{{ $value }}">{{ $label }}</option>
+                                @endforeach
+                            </x-ui.forms.select>
 
-                            <label class="relative block">
-                                <span class="sr-only">Top-Zahlen</span>
-                                <i class="mdi mdi-format-list-numbered pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-lg text-gray-500"></i>
-                                <select
-                                    wire:model.live="gameOptions.{{ $game }}.stats_limit"
-                                    class="block h-10 w-full rounded-md border-gray-300 bg-white pl-9 pr-8 text-sm font-medium text-gray-800 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                    title="Anzahl Statistikzeilen"
-                                >
-                                    @foreach ($statsLimitOptions as $count)
-                                        <option value="{{ $count }}">Top {{ $count }}</option>
-                                    @endforeach
-                                </select>
-                            </label>
+                            <x-ui.forms.select wire:model.live="gameOptions.{{ $game }}.row_count" title="Anzahl Felder">
+                                <x-slot name="icon">
+                                    <i class="mdi mdi-view-grid-outline text-lg"></i>
+                                </x-slot>
+
+                                <option disabled>Felder</option>
+                                @foreach ($rowCountOptions as $count)
+                                    <option value="{{ $count }}">{{ $count }} Felder</option>
+                                @endforeach
+                            </x-ui.forms.select>
+
+                            <x-ui.forms.select wire:model.live="gameOptions.{{ $game }}.stats_limit" title="Anzahl Statistikzeilen">
+                                <x-slot name="icon">
+                                    <i class="mdi mdi-format-list-numbered text-lg"></i>
+                                </x-slot>
+
+                                <option disabled>Top-Zahlen</option>
+                                @foreach ($statsLimitOptions as $count)
+                                    <option value="{{ $count }}">Top {{ $count }}</option>
+                                @endforeach
+                            </x-ui.forms.select>
                         </div>
                     </div>
                 </div>
