@@ -3,7 +3,6 @@
 namespace App\Livewire;
 
 use App\Models\LotteryDraw;
-use App\Models\LotteryImport;
 use App\Models\User;
 use App\Services\Lottery\LotteryScrapingSchedule;
 use Carbon\CarbonImmutable;
@@ -24,8 +23,6 @@ class AdminDashboard extends Component
 
     public int $drawsThisYear = 0;
 
-    public int $importsTotal = 0;
-
     public int $scrapedDrawsTotal = 0;
 
     public function mount(): void
@@ -40,7 +37,6 @@ class AdminDashboard extends Component
         $this->drawsThisYear = Schema::hasTable('lottery_draws')
             ? LotteryDraw::query()->whereYear('draw_date', now()->year)->count()
             : 0;
-        $this->importsTotal = Schema::hasTable('lottery_imports') ? LotteryImport::query()->count() : 0;
         $this->scrapedDrawsTotal = Schema::hasTable('lottery_draws')
             ? LotteryDraw::query()->whereNull('lottery_import_id')->count()
             : 0;
@@ -57,15 +53,9 @@ class AdminDashboard extends Component
             'latestDraws' => Schema::hasTable('lottery_draws')
                 ? LotteryDraw::query()->latest('draw_date')->limit(6)->get()
                 : collect(),
-            'latestImport' => Schema::hasTable('lottery_imports')
-                ? LotteryImport::query()->latest()->first()
-                : null,
             'latestScrapedDraw' => Schema::hasTable('lottery_draws')
                 ? LotteryDraw::query()->whereNull('lottery_import_id')->latest('updated_at')->first()
                 : null,
-            'recentScrapedDraws' => Schema::hasTable('lottery_draws')
-                ? LotteryDraw::query()->whereNull('lottery_import_id')->latest('updated_at')->limit(5)->get()
-                : collect(),
         ])->layout('layouts.master');
     }
 

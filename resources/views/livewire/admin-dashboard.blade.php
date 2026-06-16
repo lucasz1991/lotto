@@ -24,7 +24,7 @@
         </div>
     </div>
 
-    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div class="grid gap-4 md:grid-cols-3">
         <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
             <div class="flex items-center justify-between gap-3">
                 <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Ziehungen</p>
@@ -45,17 +45,6 @@
             </div>
             <p class="mt-3 text-base font-semibold text-gray-900">{{ $scheduleSummary }}</p>
             <p class="mt-1 text-xs text-gray-500">{{ $scheduleSettings['enabled'] ?? false ? 'Scheduler aktiv' : 'Scheduler deaktiviert' }}</p>
-        </div>
-
-        <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <div class="flex items-center justify-between gap-3">
-                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">CSV-Importe</p>
-                <span class="inline-flex h-9 w-9 items-center justify-center rounded-md bg-amber-50 text-amber-700">
-                    <i class="mdi mdi-file-table-outline text-lg"></i>
-                </span>
-            </div>
-            <p class="mt-3 text-3xl font-semibold text-gray-900">{{ $importsTotal }}</p>
-            <p class="mt-1 truncate text-xs text-gray-500">{{ $latestImport?->original_filename ?? 'Noch kein CSV-Import' }}</p>
         </div>
 
         <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
@@ -147,7 +136,7 @@
         @endforeach
     </div>
 
-    <div class="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
+    <div>
         <section class="rounded-lg border border-gray-200 bg-white shadow-sm">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
                 <h2 class="text-lg font-semibold text-gray-900">Letzte Ziehungen</h2>
@@ -166,14 +155,25 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100 bg-white">
                         @forelse ($latestDraws as $draw)
-                            @php($isEuroJackpot = $draw->game === \App\Models\LotteryDraw::GAME_EUROJACKPOT)
+                            @php
+                                $isEuroJackpot = $draw->game === \App\Models\LotteryDraw::GAME_EUROJACKPOT;
+                                $bonusNumbers = $draw->bonus_numbers ?? [];
+                                $bonus = $bonusNumbers['euro_numbers'] ?? [$bonusNumbers['superzahl'] ?? null];
+                                $bonus = array_values(array_filter((array) $bonus, fn ($value) => $value !== null && $value !== ''));
+                            @endphp
                             <tr class="hover:bg-slate-50">
                                 <td class="whitespace-nowrap px-5 py-3 font-semibold text-gray-900">{{ $draw->gameLabel() }}</td>
                                 <td class="whitespace-nowrap px-5 py-3 text-gray-600">{{ $draw->draw_date?->format('d.m.Y') }}</td>
                                 <td class="px-5 py-3">
-                                    <div class="flex min-w-[180px] flex-wrap gap-1.5">
+                                    <div class="flex min-w-[220px] flex-wrap gap-1.5">
                                         @foreach ($draw->numbers ?? [] as $number)
                                             <span class="inline-flex h-7 min-w-7 items-center justify-center rounded-full {{ $isEuroJackpot ? 'bg-emerald-600' : 'bg-blue-600' }} px-2 text-xs font-bold text-white">
+                                                {{ $number }}
+                                            </span>
+                                        @endforeach
+
+                                        @foreach ($bonus as $number)
+                                            <span class="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-amber-400 px-2 text-xs font-bold text-gray-900">
                                                 {{ $number }}
                                             </span>
                                         @endforeach
@@ -188,29 +188,6 @@
                         @endforelse
                     </tbody>
                 </table>
-            </div>
-        </section>
-
-        <section class="rounded-lg border border-gray-200 bg-white shadow-sm">
-            <div class="border-b border-gray-200 px-5 py-4">
-                <h2 class="text-lg font-semibold text-gray-900">Letzte Scraping-Abrufe</h2>
-            </div>
-
-            <div class="divide-y divide-gray-100">
-                @forelse ($recentScrapedDraws as $draw)
-                    <div class="px-5 py-4">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="min-w-0">
-                                <p class="font-semibold text-gray-900">{{ $draw->gameLabel() }}</p>
-                                <p class="mt-1 text-sm text-gray-500">Ziehung {{ $draw->draw_date?->format('d.m.Y') }}</p>
-                            </div>
-                            <span class="whitespace-nowrap text-xs font-semibold text-gray-500">{{ $draw->updated_at?->format('d.m.Y H:i') }}</span>
-                        </div>
-                        <p class="mt-2 truncate text-xs text-gray-500" title="{{ $draw->source_file }}">{{ $draw->source_file ?: '-' }}</p>
-                    </div>
-                @empty
-                    <div class="px-5 py-8 text-center text-sm text-gray-500">Noch keine Scraping-Abrufe vorhanden.</div>
-                @endforelse
             </div>
         </section>
     </div>
