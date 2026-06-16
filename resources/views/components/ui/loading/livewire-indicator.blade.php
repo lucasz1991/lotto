@@ -13,14 +13,21 @@
         wire:loading.class="flex"
         class="absolute inset-0 z-20 items-center justify-center rounded-lg bg-white/70 backdrop-blur-[2px] hidden"
     >
-        <div class="relative flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-lg ring-1 ring-gray-200">
-            <span class="absolute h-12 w-12 animate-spin rounded-full border border-dashed border-slate-300"></span>
-            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-50 ring-1 ring-slate-200">
-                <i class="mdi mdi-numeric text-base text-slate-500"></i>
-            </span>
-            <span class="absolute left-1/2 top-1 h-5 w-5 -translate-x-1/2 animate-bounce rounded-full bg-blue-600 text-center text-[10px] font-bold leading-5 text-white shadow-sm [animation-delay:-0.25s]">6</span>
-            <span class="absolute bottom-2 left-2 h-5 w-5 animate-bounce rounded-full bg-emerald-600 text-center text-[10px] font-bold leading-5 text-white shadow-sm [animation-delay:-0.12s]">9</span>
-            <span class="absolute bottom-2 right-2 h-5 w-5 animate-bounce rounded-full bg-amber-400 text-center text-[10px] font-bold leading-5 text-gray-950 shadow-sm">1</span>
+        <div class="relative flex h-20 w-20 items-center justify-center">
+            <div class="absolute inset-2 rounded-full border border-slate-300 bg-white/80 shadow-lg"></div>
+            <div class="absolute inset-[0.9rem] rounded-full border border-slate-200 bg-slate-50/80"></div>
+            <div class="absolute left-1/2 top-1 h-3 w-9 -translate-x-1/2 rounded-t-full border-x border-t border-slate-300 bg-white"></div>
+            <div class="absolute bottom-1 left-1/2 h-2 w-10 -translate-x-1/2 rounded-full bg-slate-200"></div>
+
+            <div class="relative h-14 w-14 animate-spin rounded-full border border-dashed border-slate-300 [animation-duration:1.15s]">
+                <span class="absolute left-1/2 top-0 flex h-5 w-5 -translate-x-1/2 -translate-y-1 items-center justify-center rounded-full bg-white text-[10px] font-bold text-slate-700 shadow-sm ring-1 ring-slate-300">6</span>
+                <span class="absolute right-0 top-1/2 flex h-5 w-5 -translate-y-1/2 translate-x-1 items-center justify-center rounded-full bg-white text-[10px] font-bold text-slate-700 shadow-sm ring-1 ring-slate-300">21</span>
+                <span class="absolute bottom-0 left-1/2 flex h-5 w-5 -translate-x-1/2 translate-y-1 items-center justify-center rounded-full bg-white text-[10px] font-bold text-slate-700 shadow-sm ring-1 ring-slate-300">9</span>
+                <span class="absolute left-0 top-1/2 flex h-5 w-5 -translate-x-1 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[10px] font-bold text-slate-700 shadow-sm ring-1 ring-slate-300">34</span>
+            </div>
+
+            <div class="pointer-events-none absolute inset-2 rounded-full border border-white/80"></div>
+            <div class="pointer-events-none absolute right-5 top-5 h-4 w-2 rounded-full bg-white/70 blur-[1px]"></div>
         </div>
 
         @if($showText)
