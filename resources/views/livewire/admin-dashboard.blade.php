@@ -1,89 +1,128 @@
-<div class="space-y-6">
-    <div class="flex flex-wrap items-start justify-between gap-4">
-        <div>
-            <h1 class="text-2xl font-semibold text-gray-900">Lotto-Dashboard</h1>
-            <p class="mt-1 text-sm text-gray-500">
-                Datenbestand, automatische Abfrage und letzte Ziehungen im Ueberblick.
-            </p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-            <a href="{{ route('admin.settings') }}" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
-                Einstellungen
-            </a>
-            <a href="{{ route('admin.recommendations') }}" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">
-                Empfehlungen
-            </a>
+<div class="space-y-6" wire:poll.5000ms>
+    <div class="rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div class="flex flex-wrap items-start justify-between gap-4 px-5 py-5">
+            <div>
+                <h1 class="text-2xl font-semibold text-gray-900">Lotto-Dashboard</h1>
+                <p class="mt-1 text-sm text-gray-500">
+                    Datenstand, Jahresabdeckung und letzte Aktivitaeten.
+                </p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('admin.history') }}" class="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
+                    <i class="mdi mdi-history text-lg"></i>
+                    Historie
+                </a>
+                <a href="{{ route('admin.settings') }}" class="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
+                    <i class="mdi mdi-cog-outline text-lg"></i>
+                    Einstellungen
+                </a>
+                <a href="{{ route('admin.recommendations') }}" class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">
+                    <i class="mdi mdi-lightbulb-on-outline text-lg"></i>
+                    Empfehlungen
+                </a>
+            </div>
         </div>
     </div>
 
     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Ziehungen</p>
+            <div class="flex items-center justify-between gap-3">
+                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Ziehungen</p>
+                <span class="inline-flex h-9 w-9 items-center justify-center rounded-md bg-blue-50 text-blue-700">
+                    <i class="mdi mdi-counter text-lg"></i>
+                </span>
+            </div>
             <p class="mt-3 text-3xl font-semibold text-gray-900">{{ $totalDraws }}</p>
-            <p class="mt-1 text-xs text-gray-500">Gespeicherte Datensaetze</p>
+            <p class="mt-1 text-xs text-gray-500">{{ $drawsThisYear }} davon im Jahr {{ now()->year }}</p>
         </div>
 
         <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Auto-Abfrage</p>
+            <div class="flex items-center justify-between gap-3">
+                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Auto-Abfrage</p>
+                <span class="inline-flex h-9 w-9 items-center justify-center rounded-md {{ $scheduleSettings['enabled'] ?? false ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500' }}">
+                    <i class="mdi mdi-calendar-clock text-lg"></i>
+                </span>
+            </div>
             <p class="mt-3 text-base font-semibold text-gray-900">{{ $scheduleSummary }}</p>
-            <p class="mt-1 text-xs text-gray-500">Laravel Scheduler</p>
+            <p class="mt-1 text-xs text-gray-500">{{ $scheduleSettings['enabled'] ?? false ? 'Scheduler aktiv' : 'Scheduler deaktiviert' }}</p>
         </div>
 
         <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Letzter Import</p>
-            <p class="mt-3 text-base font-semibold text-gray-900">
-                {{ $latestImport?->created_at?->format('d.m.Y H:i') ?? '-' }}
-            </p>
-            <p class="mt-1 text-xs text-gray-500">
-                {{ $latestImport?->original_filename ?? 'Noch kein CSV-Import' }}
-            </p>
+            <div class="flex items-center justify-between gap-3">
+                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">CSV-Importe</p>
+                <span class="inline-flex h-9 w-9 items-center justify-center rounded-md bg-amber-50 text-amber-700">
+                    <i class="mdi mdi-file-table-outline text-lg"></i>
+                </span>
+            </div>
+            <p class="mt-3 text-3xl font-semibold text-gray-900">{{ $importsTotal }}</p>
+            <p class="mt-1 truncate text-xs text-gray-500">{{ $latestImport?->original_filename ?? 'Noch kein CSV-Import' }}</p>
         </div>
 
         <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Letzter Abruf</p>
-            <p class="mt-3 text-base font-semibold text-gray-900">
-                {{ $latestScrapedDraw?->updated_at?->format('d.m.Y H:i') ?? '-' }}
-            </p>
-            <p class="mt-1 text-xs text-gray-500">
-                {{ $latestScrapedDraw ? ($latestScrapedDraw->gameLabel().' '.$latestScrapedDraw->draw_date?->format('d.m.Y')) : 'Noch kein Scraping' }}
-            </p>
+            <div class="flex items-center justify-between gap-3">
+                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Scraping</p>
+                <span class="inline-flex h-9 w-9 items-center justify-center rounded-md bg-indigo-50 text-indigo-700">
+                    <i class="mdi mdi-cloud-sync-outline text-lg"></i>
+                </span>
+            </div>
+            <p class="mt-3 text-3xl font-semibold text-gray-900">{{ $scrapedDrawsTotal }}</p>
+            <p class="mt-1 text-xs text-gray-500">{{ $latestScrapedDraw?->updated_at?->format('d.m.Y H:i') ?? 'Noch kein Abruf' }}</p>
         </div>
     </div>
 
     <div class="grid gap-6 xl:grid-cols-2">
         @foreach ($gameSummaries as $summary)
+            @php
+                $isEuroJackpot = $summary['game'] === \App\Models\LotteryDraw::GAME_EUROJACKPOT;
+                $coverage = $summary['expected_this_year'] > 0
+                    ? min(100, round(($summary['draws_this_year'] / $summary['expected_this_year']) * 100))
+                    : 0;
+                $bonusNumbers = $summary['latest_bonus_numbers'];
+                $bonus = $bonusNumbers['euro_numbers'] ?? [$bonusNumbers['superzahl'] ?? null];
+                $bonus = array_values(array_filter((array) $bonus, fn ($value) => $value !== null && $value !== ''));
+            @endphp
+
             <section class="rounded-lg border border-gray-200 bg-white shadow-sm">
-                <div class="border-b border-gray-200 px-5 py-4">
+                <div class="border-t-4 {{ $isEuroJackpot ? 'border-t-emerald-500' : 'border-t-blue-500' }} px-5 py-4">
                     <div class="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                            <h2 class="text-lg font-semibold text-gray-900">{{ $summary['label'] }}</h2>
-                            <p class="mt-1 text-sm text-gray-500">{{ $summary['draw_count'] }} gespeicherte Ziehungen</p>
+                        <div class="flex min-w-0 items-center gap-3">
+                            <span class="inline-flex h-10 w-10 items-center justify-center rounded-md {{ $isEuroJackpot ? 'bg-emerald-600' : 'bg-blue-600' }} text-sm font-bold text-white">
+                                {{ $isEuroJackpot ? 'EJ' : '6' }}
+                            </span>
+                            <div class="min-w-0">
+                                <h2 class="text-lg font-semibold text-gray-900">{{ $summary['label'] }}</h2>
+                                <p class="mt-1 text-sm text-gray-500">{{ $summary['draw_count'] }} gespeicherte Ziehungen</p>
+                            </div>
                         </div>
                         <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                            {{ $summary['latest_draw_date']?->format('d.m.Y') ?? 'Keine Daten' }}
+                            {{ $summary['source_type'] }}
                         </span>
                     </div>
                 </div>
 
-                <div class="space-y-4 px-5 py-5">
+                <div class="space-y-5 border-t border-gray-100 px-5 py-5">
+                    <div>
+                        <div class="flex items-center justify-between gap-3">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Abdeckung {{ now()->year }}</p>
+                            <p class="text-xs font-semibold text-gray-700">{{ $summary['draws_this_year'] }} / {{ $summary['expected_this_year'] }}</p>
+                        </div>
+                        <div class="mt-2 h-2 rounded-full bg-gray-100">
+                            <div class="h-2 rounded-full {{ $isEuroJackpot ? 'bg-emerald-500' : 'bg-blue-500' }}" style="width: {{ $coverage }}%"></div>
+                        </div>
+                    </div>
+
                     @if ($summary['latest_draw_date'])
                         <div>
-                            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Letzte Gewinnzahlen</p>
+                            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Letzte Ziehung {{ $summary['latest_draw_date']?->format('d.m.Y') }}</p>
                             <div class="mt-3 flex flex-wrap gap-2">
                                 @foreach ($summary['latest_numbers'] as $number)
-                                    <span class="inline-flex h-10 min-w-10 items-center justify-center rounded-full bg-blue-600 px-3 text-sm font-bold text-white shadow-sm">
+                                    <span class="inline-flex h-10 min-w-10 items-center justify-center rounded-full {{ $isEuroJackpot ? 'bg-emerald-600' : 'bg-blue-600' }} px-3 text-sm font-bold text-white shadow-sm">
                                         {{ $number }}
                                     </span>
                                 @endforeach
 
-                                @php
-                                    $bonusNumbers = $summary['latest_bonus_numbers'];
-                                    $bonus = $bonusNumbers['euro_numbers'] ?? [$bonusNumbers['superzahl'] ?? null];
-                                    $bonus = array_values(array_filter((array) $bonus, fn ($value) => $value !== null && $value !== ''));
-                                @endphp
-
                                 @foreach ($bonus as $number)
-                                    <span class="inline-flex h-10 min-w-10 items-center justify-center rounded-full bg-yellow-400 px-3 text-sm font-bold text-gray-900 shadow-sm">
+                                    <span class="inline-flex h-10 min-w-10 items-center justify-center rounded-full bg-amber-400 px-3 text-sm font-bold text-gray-900 shadow-sm">
                                         {{ $number }}
                                     </span>
                                 @endforeach
@@ -101,46 +140,78 @@
                             </div>
                         </div>
                     @else
-                        <p class="text-sm text-gray-500">
-                            Fuer diese Spielart sind noch keine Ziehungen gespeichert.
-                        </p>
+                        <p class="text-sm text-gray-500">Fuer diese Spielart sind noch keine Ziehungen gespeichert.</p>
                     @endif
                 </div>
             </section>
         @endforeach
     </div>
 
-    <section class="rounded-lg border border-gray-200 bg-white shadow-sm">
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
-            <h2 class="text-lg font-semibold text-gray-900">Letzte gespeicherte Ziehungen</h2>
-            <a href="{{ route('admin.history') }}" class="text-sm font-semibold text-blue-600 hover:text-blue-700">Historie ansehen</a>
-        </div>
+    <div class="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
+        <section class="rounded-lg border border-gray-200 bg-white shadow-sm">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
+                <h2 class="text-lg font-semibold text-gray-900">Letzte Ziehungen</h2>
+                <a href="{{ route('admin.history') }}" class="text-sm font-semibold text-blue-600 hover:text-blue-700">Alle ansehen</a>
+            </div>
 
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 text-sm">
-                <thead class="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                    <tr>
-                        <th class="px-5 py-3">Spielart</th>
-                        <th class="px-5 py-3">Ziehung</th>
-                        <th class="px-5 py-3">Zahlen</th>
-                        <th class="px-5 py-3">Quelle</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100 bg-white">
-                    @forelse ($latestDraws as $draw)
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead class="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                         <tr>
-                            <td class="px-5 py-3 font-semibold text-gray-900">{{ $draw->gameLabel() }}</td>
-                            <td class="px-5 py-3 text-gray-600">{{ $draw->draw_date?->format('d.m.Y') }}</td>
-                            <td class="px-5 py-3 text-gray-600">{{ implode(' - ', $draw->numbers ?? []) }}</td>
-                            <td class="max-w-xs truncate px-5 py-3 text-gray-600" title="{{ $draw->source_file }}">{{ $draw->source_file ?: '-' }}</td>
+                            <th class="px-5 py-3">Spielart</th>
+                            <th class="px-5 py-3">Ziehung</th>
+                            <th class="px-5 py-3">Zahlen</th>
+                            <th class="px-5 py-3">Aktualisiert</th>
                         </tr>
-                    @empty
-                        <tr>
-                            <td colspan="4" class="px-5 py-8 text-center text-gray-500">Noch keine Ziehungen vorhanden.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </section>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 bg-white">
+                        @forelse ($latestDraws as $draw)
+                            @php($isEuroJackpot = $draw->game === \App\Models\LotteryDraw::GAME_EUROJACKPOT)
+                            <tr class="hover:bg-slate-50">
+                                <td class="whitespace-nowrap px-5 py-3 font-semibold text-gray-900">{{ $draw->gameLabel() }}</td>
+                                <td class="whitespace-nowrap px-5 py-3 text-gray-600">{{ $draw->draw_date?->format('d.m.Y') }}</td>
+                                <td class="px-5 py-3">
+                                    <div class="flex min-w-[180px] flex-wrap gap-1.5">
+                                        @foreach ($draw->numbers ?? [] as $number)
+                                            <span class="inline-flex h-7 min-w-7 items-center justify-center rounded-full {{ $isEuroJackpot ? 'bg-emerald-600' : 'bg-blue-600' }} px-2 text-xs font-bold text-white">
+                                                {{ $number }}
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                </td>
+                                <td class="whitespace-nowrap px-5 py-3 text-gray-600">{{ $draw->updated_at?->format('d.m.Y H:i') }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="px-5 py-8 text-center text-gray-500">Noch keine Ziehungen vorhanden.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="rounded-lg border border-gray-200 bg-white shadow-sm">
+            <div class="border-b border-gray-200 px-5 py-4">
+                <h2 class="text-lg font-semibold text-gray-900">Letzte Scraping-Abrufe</h2>
+            </div>
+
+            <div class="divide-y divide-gray-100">
+                @forelse ($recentScrapedDraws as $draw)
+                    <div class="px-5 py-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="font-semibold text-gray-900">{{ $draw->gameLabel() }}</p>
+                                <p class="mt-1 text-sm text-gray-500">Ziehung {{ $draw->draw_date?->format('d.m.Y') }}</p>
+                            </div>
+                            <span class="whitespace-nowrap text-xs font-semibold text-gray-500">{{ $draw->updated_at?->format('d.m.Y H:i') }}</span>
+                        </div>
+                        <p class="mt-2 truncate text-xs text-gray-500" title="{{ $draw->source_file }}">{{ $draw->source_file ?: '-' }}</p>
+                    </div>
+                @empty
+                    <div class="px-5 py-8 text-center text-sm text-gray-500">Noch keine Scraping-Abrufe vorhanden.</div>
+                @endforelse
+            </div>
+        </section>
+    </div>
 </div>
