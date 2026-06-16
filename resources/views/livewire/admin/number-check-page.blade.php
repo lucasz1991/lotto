@@ -181,10 +181,12 @@
                                         {{ $currentAnalysis['history']['main_hits'] ?? 0 }} Hauptzahlen + {{ $currentAnalysis['history']['bonus_hits'] ?? 0 }} Zusatz
                                     </p>
                                 </div>
-                                <div class="rounded-md bg-gray-50 p-3">
-                                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Datum</p>
-                                    <p class="mt-1 text-sm font-semibold text-gray-900">{{ $currentAnalysis['history']['draw_date'] ?? '-' }}</p>
-                                </div>
+                                @if (($currentAnalysis['history']['exact_match'] ?? false) && ($currentAnalysis['history']['draw_date'] ?? null))
+                                    <div class="rounded-md bg-gray-50 p-3">
+                                        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Schon gezogen am</p>
+                                        <p class="mt-1 text-sm font-semibold text-gray-900">{{ $currentAnalysis['history']['draw_date'] }}</p>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     @else

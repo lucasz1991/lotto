@@ -305,22 +305,36 @@ class LotteryRecommendationService
             'main_hits' => 0,
             'bonus_hits' => 0,
             'draw_date' => null,
+            'exact_match' => false,
         ];
 
         foreach ($draws as $draw) {
             $mainHits = count(array_intersect($mainNumbers, $draw->numbers ?? []));
-            $bonusHits = count(array_intersect($bonusNumbers, $this->extractBonusNumbers($draw, $bonusKey)));
+            $drawBonusNumbers = $this->extractBonusNumbers($draw, $bonusKey);
+            $bonusHits = count(array_intersect($bonusNumbers, $drawBonusNumbers));
 
             if ($mainHits > $best['main_hits'] || ($mainHits === $best['main_hits'] && $bonusHits > $best['bonus_hits'])) {
                 $best = [
                     'main_hits' => $mainHits,
                     'bonus_hits' => $bonusHits,
                     'draw_date' => $draw->draw_date?->toDateString(),
+                    'exact_match' => $this->sameNumbers($mainNumbers, $draw->numbers ?? [])
+                        && $this->sameNumbers($bonusNumbers, $drawBonusNumbers),
                 ];
             }
         }
 
         return $best;
+    }
+
+    protected function sameNumbers(array $left, array $right): bool
+    {
+        $left = array_map('intval', $left);
+        $right = array_map('intval', $right);
+        sort($left);
+        sort($right);
+
+        return $left === $right;
     }
 
     protected function scoreNumbers(Collection $draws, array $range, int $pickCount, callable $numberExtractor, string $method): array
