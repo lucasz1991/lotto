@@ -85,16 +85,26 @@
                                             <div class="flex flex-wrap gap-2">
                                                 @foreach ($row['main_numbers'] as $number)
                                                     @php($stat = $row['main_number_stats'][$number] ?? [])
-                                                    <span class="group relative inline-flex">
-                                                        <button
-                                                            type="button"
-                                                            class="inline-flex h-10 min-w-10 items-center justify-center rounded-full {{ $isEuroJackpot ? 'bg-emerald-600' : 'bg-blue-600' }} px-3 text-sm font-bold text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                                                            aria-label="Details zu Zahl {{ $number }}"
-                                                        >
-                                                            {{ $number }}
-                                                        </button>
-                                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-56 -translate-x-1/2 rounded-md border border-gray-200 bg-white p-3 text-left text-xs font-normal text-gray-600 shadow-lg group-hover:block group-focus-within:block">
-                                                            <span class="mb-2 block font-semibold text-gray-900">Zahl {{ $number }}</span>
+                                                    <x-ui.dropdown.anchor-dropdown
+                                                        align="top"
+                                                        width="auto"
+                                                        :offset="8"
+                                                        dropdownClasses="mx-0"
+                                                        contentClasses="bg-white"
+                                                    >
+                                                        <x-slot name="trigger">
+                                                            <button
+                                                                type="button"
+                                                                class="inline-flex h-10 min-w-10 items-center justify-center rounded-full {{ $isEuroJackpot ? 'bg-emerald-600' : 'bg-blue-600' }} px-3 text-sm font-bold text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                                                aria-label="Details zu Zahl {{ $number }}"
+                                                            >
+                                                                {{ $number }}
+                                                            </button>
+                                                        </x-slot>
+
+                                                        <x-slot name="content">
+                                                            <div class="w-56 p-3 text-left text-xs font-normal text-gray-600">
+                                                                <span class="mb-2 block font-semibold text-gray-900">Zahl {{ $number }}</span>
                                                             @if ($recommendation['method'] === \App\Services\Lottery\LotteryRecommendationService::METHOD_RARE)
                                                                 <span class="block">Nur {{ $stat['frequency'] ?? 0 }}x insgesamt gezogen.</span>
                                                                 <span class="block">Erwartet: {{ $stat['expected_frequency'] ?? '-' }}x.</span>
@@ -111,22 +121,33 @@
                                                                 <span class="block">Score: {{ $stat['score'] ?? '-' }}.</span>
                                                                 <span class="block">{{ $stat['frequency'] ?? 0 }}x insgesamt, {{ $stat['missed_draws'] ?? 0 }} Ziehungen faellig.</span>
                                                             @endif
-                                                        </span>
-                                                    </span>
+                                                            </div>
+                                                        </x-slot>
+                                                    </x-ui.dropdown.anchor-dropdown>
                                                 @endforeach
 
                                                 @foreach ($row['bonus_numbers'] as $number)
                                                     @php($stat = $row['bonus_number_stats'][$number] ?? [])
-                                                    <span class="group relative inline-flex">
-                                                        <button
-                                                            type="button"
-                                                            class="inline-flex h-10 min-w-10 items-center justify-center rounded-full bg-amber-400 px-3 text-sm font-bold text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
-                                                            aria-label="Details zu Zusatzzahl {{ $number }}"
-                                                        >
-                                                            {{ $number }}
-                                                        </button>
-                                                        <span class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-56 -translate-x-1/2 rounded-md border border-gray-200 bg-white p-3 text-left text-xs font-normal text-gray-600 shadow-lg group-hover:block group-focus-within:block">
-                                                            <span class="mb-2 block font-semibold text-gray-900">{{ $isEuroJackpot ? 'Eurozahl' : 'Superzahl' }} {{ $number }}</span>
+                                                    <x-ui.dropdown.anchor-dropdown
+                                                        align="top"
+                                                        width="auto"
+                                                        :offset="8"
+                                                        dropdownClasses="mx-0"
+                                                        contentClasses="bg-white"
+                                                    >
+                                                        <x-slot name="trigger">
+                                                            <button
+                                                                type="button"
+                                                                class="inline-flex h-10 min-w-10 items-center justify-center rounded-full bg-amber-400 px-3 text-sm font-bold text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+                                                                aria-label="Details zu Zusatzzahl {{ $number }}"
+                                                            >
+                                                                {{ $number }}
+                                                            </button>
+                                                        </x-slot>
+
+                                                        <x-slot name="content">
+                                                            <div class="w-56 p-3 text-left text-xs font-normal text-gray-600">
+                                                                <span class="mb-2 block font-semibold text-gray-900">{{ $isEuroJackpot ? 'Eurozahl' : 'Superzahl' }} {{ $number }}</span>
                                                             @if ($recommendation['method'] === \App\Services\Lottery\LotteryRecommendationService::METHOD_RARE)
                                                                 <span class="block">Nur {{ $stat['frequency'] ?? 0 }}x insgesamt gezogen.</span>
                                                                 <span class="block">Erwartet: {{ $stat['expected_frequency'] ?? '-' }}x.</span>
@@ -143,8 +164,9 @@
                                                                 <span class="block">Score: {{ $stat['score'] ?? '-' }}.</span>
                                                                 <span class="block">{{ $stat['frequency'] ?? 0 }}x insgesamt, {{ $stat['missed_draws'] ?? 0 }} Ziehungen faellig.</span>
                                                             @endif
-                                                        </span>
-                                                    </span>
+                                                            </div>
+                                                        </x-slot>
+                                                    </x-ui.dropdown.anchor-dropdown>
                                                 @endforeach
                                             </div>
                                         </div>
