@@ -29,13 +29,6 @@
                     Allgemein
                 </button>
 
-                <button
-                    type="button"
-                    wire:click="switchTab('csv-import')"
-                    class="rounded-md px-4 py-2 text-sm font-semibold {{ $activeTab === 'csv-import' ? 'bg-slate-900 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}"
-                >
-                    CSV-Import
-                </button>
 
                 <button
                     type="button"
