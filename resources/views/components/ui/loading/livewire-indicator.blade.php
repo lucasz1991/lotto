@@ -17,8 +17,39 @@
     </div>
 @else
     <div
-        wire:loading.delay.longer
-        @if($target) wire:target="{{ $target }}" @endif
+        x-data="{
+            visible: false,
+            timeout: null,
+            start() {
+                clearTimeout(this.timeout);
+                this.timeout = setTimeout(() => this.visible = true, 350);
+            },
+            stop() {
+                clearTimeout(this.timeout);
+                this.visible = false;
+            },
+            register() {
+                if (! window.Livewire || ! Livewire.hook) {
+                    return;
+                }
+
+                Livewire.hook('request', ({ respond, fail }) => {
+                    this.start();
+
+                    if (typeof respond === 'function') {
+                        respond(() => this.stop());
+                    }
+
+                    if (typeof fail === 'function') {
+                        fail(() => this.stop());
+                    }
+                });
+            }
+        }"
+        x-init="window.Livewire ? register() : document.addEventListener('livewire:init', () => register(), { once: true })"
+        x-show="visible"
+        x-transition.opacity.duration.150ms
+        style="display: none;"
         class="pointer-events-none fixed left-0 right-0 top-0 z-[9999]"
     >
         <div class="h-1 w-full overflow-hidden bg-blue-100">
