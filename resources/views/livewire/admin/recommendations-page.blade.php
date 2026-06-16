@@ -2,12 +2,6 @@
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
             <h1 class="text-2xl font-semibold text-gray-900">Empfehlungen</h1>
-            <p class="mt-1 max-w-3xl text-sm text-gray-500">
-                Zahlenvorschlaege je Spielart mit eigener Auswertungsart, Feldanzahl und Statistik-Tiefe.
-            </p>
-        </div>
-        <div class="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800">
-            Standard: Selten gezogen
         </div>
     </div>
 
