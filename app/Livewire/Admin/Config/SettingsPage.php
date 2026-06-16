@@ -40,7 +40,7 @@ class SettingsPage extends Component
 
     public bool $historicalScrapeModalOpen = false;
 
-    public int $historicalScrapeYear;
+    public array $historicalScrapeYears = [];
 
     public array $historicalScrapeGames = [];
 
@@ -51,7 +51,7 @@ class SettingsPage extends Component
     public function mount(): void
     {
         $this->loadGameSettings(app(LotteryScrapingSchedule::class));
-        $this->historicalScrapeYear = (int) now()->year;
+        $this->historicalScrapeYears = [(int) now()->year];
         $this->historicalScrapeGames = array_keys(LotteryDraw::gameLabels());
         $this->historicalYearOptions = $this->fallbackHistoricalYearOptions();
     }
@@ -144,20 +144,30 @@ class SettingsPage extends Component
         $this->persistGameSettings();
 
         $validated = $this->validate([
-            'historicalScrapeYear' => ['required', 'integer', 'min:1955', 'max:'.now()->year],
+            'historicalScrapeYears' => ['required', 'array', 'min:1'],
+            'historicalScrapeYears.*' => ['required', 'integer', 'min:1955', 'max:'.now()->year],
             'historicalScrapeGames' => ['required', 'array', 'min:1'],
             'historicalScrapeGames.*' => ['required', Rule::in(array_keys(LotteryDraw::gameLabels()))],
         ]);
 
+        $years = collect($validated['historicalScrapeYears'])
+            ->map(fn (mixed $year): int => (int) $year)
+            ->unique()
+            ->sortDesc()
+            ->values()
+            ->all();
         $games = array_values(array_unique($validated['historicalScrapeGames']));
         $urls = collect($games)
             ->mapWithKeys(fn (string $game): array => [$game => trim($this->scrapingUrlFor($game))])
             ->all();
 
-        ScrapeLotteryHistoricalYear::dispatch((int) $validated['historicalScrapeYear'], $games, $urls);
+        foreach ($years as $year) {
+            ScrapeLotteryHistoricalYear::dispatch($year, $games, $urls);
+        }
 
         $this->lastHistoricalScrapeDispatch = [
-            'year' => (int) $validated['historicalScrapeYear'],
+            'years' => $years,
+            'job_count' => count($years),
             'games' => collect($games)
                 ->map(fn (string $game): string => LotteryDraw::gameLabels()[$game] ?? $game)
                 ->values()
@@ -166,7 +176,7 @@ class SettingsPage extends Component
         ];
         $this->historicalScrapeModalOpen = false;
 
-        session()->flash('success', 'Historischer Jahres-Scan wurde als Job gestartet.');
+        session()->flash('success', count($years).' historische Jahres-Scan-Jobs wurden gestartet.');
     }
 
     public function importCsv(LotteryCsvImportService $importer): void

@@ -376,14 +376,18 @@ HTML),
             ->call('openHistoricalScrapeModal')
             ->assertSet('historicalScrapeModalOpen', true)
             ->assertSet('historicalYearOptions', [2026, 2025, 2024])
-            ->set('historicalScrapeYear', 2026)
+            ->set('historicalScrapeYears', [2026, 2025])
             ->set('historicalScrapeGames', [LotteryDraw::GAME_LOTTO_6AUS49, LotteryDraw::GAME_EUROJACKPOT])
             ->call('startHistoricalYearScrape')
             ->assertHasNoErrors()
             ->assertSet('historicalScrapeModalOpen', false)
-            ->assertSet('lastHistoricalScrapeDispatch.year', 2026);
+            ->assertSet('lastHistoricalScrapeDispatch.years', [2026, 2025])
+            ->assertSet('lastHistoricalScrapeDispatch.job_count', 2);
 
+        Bus::assertDispatched(ScrapeLotteryHistoricalYear::class, 2);
         Bus::assertDispatched(ScrapeLotteryHistoricalYear::class, fn (ScrapeLotteryHistoricalYear $job): bool => $job->year === 2026
+            && $job->games === [LotteryDraw::GAME_LOTTO_6AUS49, LotteryDraw::GAME_EUROJACKPOT]);
+        Bus::assertDispatched(ScrapeLotteryHistoricalYear::class, fn (ScrapeLotteryHistoricalYear $job): bool => $job->year === 2025
             && $job->games === [LotteryDraw::GAME_LOTTO_6AUS49, LotteryDraw::GAME_EUROJACKPOT]);
     }
 

@@ -243,7 +243,8 @@
                             <div>
                                 <h3 class="text-base font-semibold text-indigo-950">Historischer Scan gestartet</h3>
                                 <p class="mt-1 text-sm text-indigo-800">
-                                    Jahr {{ $lastHistoricalScrapeDispatch['year'] }} fuer {{ implode(', ', $lastHistoricalScrapeDispatch['games']) }}.
+                                    {{ $lastHistoricalScrapeDispatch['job_count'] }} Jobs fuer {{ implode(', ', $lastHistoricalScrapeDispatch['games']) }}:
+                                    {{ implode(', ', $lastHistoricalScrapeDispatch['years']) }}.
                                 </p>
                             </div>
                             <span class="rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-900">
@@ -384,21 +385,27 @@
         <x-slot name="content">
             <div class="space-y-5">
                 <p class="text-sm text-gray-500">
-                    Der Job liest fuer das ausgewaehlte Jahr zuerst die verfuegbaren Ziehungstage aus und speichert danach jede Ziehung einzeln. Bestehende Eintraege werden pro Spielart und Datum aktualisiert.
+                    Fuer jedes ausgewaehlte Jahr wird ein eigener Job gestartet. Jeder Job liest zuerst die verfuegbaren Ziehungstage aus und speichert danach jede Ziehung einzeln.
                 </p>
 
-                <label class="block">
-                    <span class="text-sm font-semibold text-gray-700">Jahr</span>
-                    <select
-                        wire:model.defer="historicalScrapeYear"
-                        class="mt-2 block w-full rounded-md border border-gray-300 bg-white p-3 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    >
+                <div>
+                    <p class="text-sm font-semibold text-gray-700">Jahre</p>
+                    <div class="mt-2 grid max-h-56 gap-2 overflow-y-auto rounded-md border border-gray-200 bg-gray-50 p-3 sm:grid-cols-3">
                         @foreach ($historicalYearOptions as $year)
-                            <option value="{{ $year }}">{{ $year }}</option>
+                            <label class="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm">
+                                <input
+                                    type="checkbox"
+                                    value="{{ $year }}"
+                                    wire:model.defer="historicalScrapeYears"
+                                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500"
+                                >
+                                {{ $year }}
+                            </label>
                         @endforeach
-                    </select>
-                    @error('historicalScrapeYear') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
-                </label>
+                    </div>
+                    @error('historicalScrapeYears') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                    @error('historicalScrapeYears.*') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                </div>
 
                 <div>
                     <p class="text-sm font-semibold text-gray-700">Spiele</p>
