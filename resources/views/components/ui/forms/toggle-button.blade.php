@@ -2,14 +2,25 @@
     'id'    => 'toggle-' . Str::random(6),
     'label' => null,
     'model' => null,   // z. B. maintenanceMode
+    'modifier' => 'live',
+    'value' => null,
     'change' => null,  // optional: JS change handler
 ])
+
+@php
+    $wireModel = '';
+
+    if ($model) {
+        $wireModel = 'wire:model'.($modifier ? '.'.$modifier : '').'="'.e($model).'"';
+    }
+@endphp
 
 <label for="{{ $id }}" class="flex items-center cursor-pointer select-none">
     <input 
         id="{{ $id }}"
         type="checkbox"
-        @if($model) wire:model.live="{{ $model }}" @endif
+        {!! $wireModel !!}
+        @if($value !== null) value="{{ $value }}" @endif
         @if($change) @change="{{ $change }}" @endif
         class="sr-only peer"
     />

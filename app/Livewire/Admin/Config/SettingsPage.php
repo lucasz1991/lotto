@@ -20,7 +20,7 @@ class SettingsPage extends Component
 {
     use WithFileUploads;
 
-    public string $activeTab = 'csv-import';
+    public string $activeTab = 'general';
 
     public $csvFile = null;
 
@@ -58,7 +58,7 @@ class SettingsPage extends Component
 
     public function switchTab(string $tab): void
     {
-        $this->activeTab = in_array($tab, ['general', 'games', 'csv-import'], true) ? $tab : 'general';
+        $this->activeTab = in_array($tab, ['general', 'games'], true) ? $tab : 'general';
     }
 
     public function saveGameSettings(): void

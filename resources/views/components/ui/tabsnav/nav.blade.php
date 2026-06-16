@@ -3,11 +3,9 @@
   // 2) Map :  ['basic'=>['label'=>'…'], ... ]
   'tabs' => [],
 
-  // Default Layout mit reduziertem Styling
-  'class' => 'flex items-center gap-2 overflow-x-auto px-1',
+  'class' => 'flex items-center gap-2 overflow-x-auto',
 
-  // Button-Basis
-  'buttonClass' => 'inline-flex min-h-[40px] items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors border border-transparent',
+  'buttonClass' => 'inline-flex min-h-[40px] items-center justify-center rounded-md px-4 py-2 text-sm font-semibold transition-colors border border-transparent',
 
   // Breakpoint fuer Collapse-Variante
   'collapseAt' => 'md',
@@ -69,8 +67,8 @@
         x-on:click="selectedTab = t.id"
         class="{{ $buttonClass }}"
         x-bind:class="selectedTab === t.id
-          ? 'border border-blue-200 bg-blue-50 text-blue-700 shadow-sm'
-          : 'bg-white text-gray-600 hover:text-gray-900 hover:bg-gray-50'"
+          ? 'border-blue-200 bg-white text-blue-700 shadow-sm'
+          : 'bg-transparent text-gray-600 hover:bg-white hover:text-gray-900'"
         :aria-controls="`tabpanel-${t.id}`"
         :title="t.label"
       >
@@ -87,7 +85,7 @@
         role="tab"
         aria-selected="true"
         tabindex="0"
-        class="{{ $buttonClass }} border border-blue-200 bg-blue-50 text-blue-700 shadow-sm flex-1"
+        class="{{ $buttonClass }} flex-1 border-blue-200 bg-white text-blue-700 shadow-sm"
         :title="active?.label ?? ''"
       >
         <span class="truncate" x-text="active?.label ?? ''"></span>
@@ -98,15 +96,12 @@
         type="button"
         @click="open=!open"
         @keydown.escape.window="open=false"
-        class="{{ $buttonClass }} bg-white text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+        class="{{ $buttonClass }} bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900"
         :aria-expanded="open.toString()"
         aria-haspopup="menu"
         title="Weitere Tabs"
       >
         <span class="whitespace-nowrap">Mehr</span>
-        <svg class="ml-2 h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.095l3.71-3.864a.75.75 0 111.08 1.04l-4.24 4.41a.75.75 0 01-1.08 0l-4.24-4.41a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-        </svg>
       </button>
 
       <template x-teleport="body">
