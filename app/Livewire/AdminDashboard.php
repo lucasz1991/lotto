@@ -30,6 +30,11 @@ class AdminDashboard extends Component
 
     public function mount(): void
     {
+        $this->refreshDashboardData();
+    }
+
+    public function refreshDashboardData(): void
+    {
         $this->totalUsers = Schema::hasTable('users') ? User::count() : 0;
         $this->totalDraws = Schema::hasTable('lottery_draws') ? LotteryDraw::query()->count() : 0;
         $this->drawsThisYear = Schema::hasTable('lottery_draws')

@@ -1,4 +1,4 @@
-<div class="space-y-6" wire:poll.5000ms>
+<div class="space-y-6" wire:poll.5000ms="refreshDashboardData">
     <div class="rounded-lg border border-slate-200 bg-white shadow-sm">
         <div class="flex flex-wrap items-start justify-between gap-4 px-5 py-5">
             <div>
