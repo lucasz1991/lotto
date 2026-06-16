@@ -140,7 +140,7 @@
                             </button>
                         </div>
 
-                        <div class="border-t border-gray-100 pt-5">
+                        <div class="border-t border-gray-100 pt-12">
 
                             <div class="grid gap-3">
                                 @foreach ($recommendation['rows'] as $index => $row)
