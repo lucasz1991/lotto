@@ -190,6 +190,7 @@
                 mode="basic"
                 size="sm"
             >
+                <i class="mdi mdi-close-circle-outline me-1 text-lg"></i>
                 Schliessen
             </x-buttons.button-basic>
         </x-slot>
