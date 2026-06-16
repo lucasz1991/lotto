@@ -52,7 +52,7 @@
                                 <span class="shrink-0 text-gray-500">{{ $icon }}</span>
                             @endif
 
-                            <span class="truncate {{ $compactMobile ? 'hidden sm:block' : 'block' }}">
+                            <span class="truncate block">
                                 {{ $selectedOption['label'] ?? $title ?? '-' }}
                             </span>
                         </span>
