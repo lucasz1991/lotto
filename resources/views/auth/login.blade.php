@@ -32,7 +32,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('login') }}" class="mt-8 space-y-5">
+        <form method="POST" action="{{ route('login') }}" class="mt-8 space-y-5" x-data="{ submitting: false }" x-on:submit="submitting = true">
             @csrf
 
             <div>
@@ -101,6 +101,15 @@
             >
                 Einloggen
             </x-button>
+
+            <div
+                x-cloak
+                x-show="submitting"
+                x-transition.opacity.duration.150ms
+                class="fixed inset-0 z-[9999] flex items-center justify-center bg-white/60 backdrop-blur-[1px]"
+            >
+                <x-ui.loading.livewire-indicator mode="static" />
+            </div>
         </form>
     </div>
 @endsection

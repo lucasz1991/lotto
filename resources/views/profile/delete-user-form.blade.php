@@ -1,3 +1,6 @@
+<div class="relative">
+    <x-ui.loading.livewire-indicator mode="overlay" target="confirmUserDeletion,deleteUser" :show-text="false" />
+
 <x-action-section>
     <x-slot name="title">
         {{ __('Delete Account') }}
@@ -51,3 +54,4 @@
         </x-dialog-modal>
     </x-slot>
 </x-action-section>
+</div>

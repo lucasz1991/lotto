@@ -1,3 +1,6 @@
+<div class="relative">
+    <x-ui.loading.livewire-indicator mode="overlay" target="updatePassword" :show-text="false" />
+
 <x-form-section submit="updatePassword">
     <x-slot name="title">
         {{ __('Passwort aktualisieren') }}
@@ -37,3 +40,4 @@
         </x-button>
     </x-slot>
 </x-form-section>
+</div>

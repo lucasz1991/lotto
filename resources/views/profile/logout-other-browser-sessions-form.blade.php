@@ -1,3 +1,6 @@
+<div class="relative">
+    <x-ui.loading.livewire-indicator mode="overlay" target="confirmLogout,logoutOtherBrowserSessions" :show-text="false" />
+
 <x-action-section>
     <x-slot name="title">
         {{ __('Browsersitzungen') }}
@@ -96,3 +99,4 @@
         </x-dialog-modal>
     </x-slot>
 </x-action-section>
+</div>

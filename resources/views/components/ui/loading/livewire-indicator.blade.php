@@ -5,14 +5,8 @@
     'showText' => true,
 ])
 
-@if ($mode === 'overlay')
-    <div
-        wire:loading.delay
-        @if($target) wire:target="{{ $target }}" @endif
-        wire:loading.class.remove="hidden"
-        wire:loading.class="flex"
-        class="absolute inset-0 z-20 items-center justify-center rounded-lg bg-white/70 backdrop-blur-[2px] hidden"
-    >
+@php
+    $drum = <<<'HTML'
         <div class="relative flex h-20 w-20 items-center justify-center">
             <div class="absolute inset-2 rounded-full border border-slate-300 bg-white/80 shadow-lg"></div>
             <div class="absolute inset-[0.9rem] rounded-full border border-slate-200 bg-slate-50/80"></div>
@@ -29,6 +23,20 @@
             <div class="pointer-events-none absolute inset-2 rounded-full border border-white/80"></div>
             <div class="pointer-events-none absolute right-5 top-5 h-4 w-2 rounded-full bg-white/70 blur-[1px]"></div>
         </div>
+    HTML;
+@endphp
+
+@if ($mode === 'static')
+    {!! $drum !!}
+@elseif ($mode === 'overlay')
+    <div
+        wire:loading.delay
+        @if($target) wire:target="{{ $target }}" @endif
+        wire:loading.class.remove="hidden"
+        wire:loading.class="flex"
+        class="absolute inset-0 z-20 items-center justify-center rounded-lg bg-white/70 backdrop-blur-[2px] hidden"
+    >
+        {!! $drum !!}
 
         @if($showText)
             <span class="sr-only">{{ $text }}</span>
@@ -38,14 +46,14 @@
     <div
         wire:loading.delay.longer
         @if($target) wire:target="{{ $target }}" @endif
-        class="pointer-events-none fixed left-0 right-0 top-0 z-[9999]"
+        wire:loading.class.remove="hidden"
+        wire:loading.class="flex"
+        class="pointer-events-none fixed inset-0 z-[9999] hidden items-center justify-center bg-white/50 backdrop-blur-[1px]"
     >
-        <div class="h-1 w-full overflow-hidden bg-blue-100">
-            <div class="h-full w-1/3 animate-pulse bg-blue-600"></div>
-        </div>
-        <div class="absolute right-4 top-4 inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-lg">
-            <i class="mdi mdi-loading animate-spin text-base text-blue-600"></i>
-            {{ $text }}
-        </div>
+        {!! $drum !!}
+
+        @if($showText)
+            <span class="sr-only">{{ $text }}</span>
+        @endif
     </div>
 @endif

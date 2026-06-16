@@ -1,3 +1,6 @@
+<div class="relative">
+    <x-ui.loading.livewire-indicator mode="overlay" target="updateProfileInformation,deleteProfilePhoto,sendEmailVerification,photo" :show-text="false" />
+
 <x-form-section submit="updateProfileInformation">
     <x-slot name="title">
          {{ __('Profilinformationen') }}
@@ -133,3 +136,4 @@
         </x-button>
     </x-slot>
 </x-form-section>
+</div>

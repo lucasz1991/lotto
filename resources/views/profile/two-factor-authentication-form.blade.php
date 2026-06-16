@@ -1,3 +1,6 @@
+<div class="relative">
+    <x-ui.loading.livewire-indicator mode="overlay" target="enableTwoFactorAuthentication,confirmTwoFactorAuthentication,disableTwoFactorAuthentication,regenerateRecoveryCodes,showRecoveryCodes" :show-text="false" />
+
 <x-action-section>
     <x-slot name="title">
         {{ __('Zwei-Faktor-Authentifizierung') }}
@@ -121,3 +124,4 @@
         </div>
     </x-slot>
 </x-action-section>
+</div>
