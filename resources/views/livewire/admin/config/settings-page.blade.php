@@ -18,60 +18,48 @@
         </div>
     @endif
 
-    <div class="rounded-lg border border-gray-200 bg-white shadow-sm">
-        <div class="border-b border-gray-200 px-6 py-4">
-            <div class="flex flex-wrap gap-2">
-                <button
-                    type="button"
-                    wire:click="switchTab('general')"
-                    class="rounded-md px-4 py-2 text-sm font-semibold {{ $activeTab === 'general' ? 'bg-slate-900 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}"
-                >
-                    Allgemein
-                </button>
-
-
-                <button
-                    type="button"
-                    wire:click="switchTab('games')"
-                    class="rounded-md px-4 py-2 text-sm font-semibold {{ $activeTab === 'games' ? 'bg-slate-900 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}"
-                >
-                    Spiele
-                </button>
-            </div>
+    <x-ui.tabsnav.container
+        storageKey="admin-settings.tabs"
+        :default="$activeTab"
+        class="rounded-lg border border-gray-200 bg-white shadow-sm"
+    >
+        <div class="border-b border-gray-200 bg-gray-50 px-6 pt-6">
+            <x-ui.tabsnav.nav
+                :tabs="[
+                    ['id' => 'general', 'label' => 'Allgemein'],
+                    ['id' => 'games', 'label' => 'Spiele'],
+                    {{-- ['id' => 'csv-import', 'label' => 'CSV-Import'], --}}
+                ]"
+            />
         </div>
 
-        @if ($activeTab === 'general')
-            <div class="space-y-4 px-6 py-6">
+        <div class="px-6 pb-6">
+            <x-ui.tabsnav.panel name="general" class="space-y-4">
                 <h2 class="text-lg font-semibold text-gray-900">Allgemein</h2>
                 <p class="text-sm text-gray-500">
                     Weitere Einstellungen koennen hier spaeter ergaenzt werden.
                 </p>
-            </div>
-        @endif
+            </x-ui.tabsnav.panel>
 
-        @if ($activeTab === 'games')
-            <div class="space-y-8 px-6 py-6">
-                <div>
-                    <div class="flex flex-wrap items-start justify-between gap-4">
-                        <div>
-                            <h2 class="text-lg font-semibold text-gray-900">Spiele & Scraping</h2>
-                            <p class="mt-1 text-sm text-gray-500">
-                                Hinterlege pro Spielart eine URL, aus der die aktuell gezogenen Zahlen ausgelesen werden sollen.
-                            </p>
-                        </div>
-
-                        <button
-                            type="button"
-                            wire:click="openHistoricalScrapeModal"
-                            class="inline-flex items-center justify-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-100"
-                        >
-                            <i class="mdi mdi-database-clock-outline text-lg"></i>
-                            Historie scannen
-                        </button>
+            <x-ui.tabsnav.panel name="games" class="space-y-8">
+                <div class="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-900">Spiele &amp; Scraping</h2>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Hinterlege pro Spielart eine URL, aus der die aktuell gezogenen Zahlen ausgelesen werden sollen.
+                        </p>
                     </div>
+
+                    <button
+                        type="button"
+                        wire:click="openHistoricalScrapeModal"
+                        class="inline-flex items-center justify-center rounded-md border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-100"
+                    >
+                        Historie scannen
+                    </button>
                 </div>
 
-                <div class="rounded-lg border border-gray-200 bg-gray-50 p-5">
+                <div class="space-y-5 rounded-lg border border-gray-200 bg-gray-50 p-5">
                     <div class="flex flex-wrap items-start justify-between gap-4">
                         <div>
                             <h3 class="text-base font-semibold text-gray-900">Automatische Abfrage</h3>
@@ -79,17 +67,15 @@
                                 Legt fest, wann der Laravel Scheduler die aktuellen Ziehungsdaten abfragt.
                             </p>
                         </div>
-                        <label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <input
-                                type="checkbox"
-                                wire:model.defer="scrapingScheduleEnabled"
-                                class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500"
-                            >
-                            Aktiv
-                        </label>
+
+                        <x-ui.forms.toggle-button
+                            id="scraping-schedule-toggle"
+                            model="scrapingScheduleEnabled"
+                            :label="$scrapingScheduleEnabled ? 'Aktiv' : 'Inaktiv'"
+                        />
                     </div>
 
-                    <div class="mt-5 grid gap-5 lg:grid-cols-[220px_1fr]">
+                    <div class="grid gap-5 lg:grid-cols-[220px_1fr]">
                         <label class="block">
                             <span class="text-sm font-semibold text-gray-700">Uhrzeit</span>
                             <input
@@ -97,175 +83,234 @@
                                 wire:model.defer="scrapingScheduleTime"
                                 class="mt-2 block w-full rounded-md border border-gray-300 bg-white p-3 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
                             >
-                            @error('scrapingScheduleTime') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                            @error('scrapingScheduleTime')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                         </label>
 
                         <div>
                             <p class="text-sm font-semibold text-gray-700">Wochentage</p>
-                            <div class="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                            <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                                 @foreach ($weekdayLabels as $day => $label)
-                                    <label class="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm">
-                                        <input
-                                            type="checkbox"
-                                            value="{{ $day }}"
+                                    <div class="rounded-lg border border-gray-200 bg-white p-3 shadow-sm" wire:key="weekday-{{ $day }}">
+                                        <x-ui.forms.checkbox
+                                            :id="'weekday-' . $day"
+                                            toggle
+                                            size="sm"
                                             wire:model.defer="scrapingScheduleWeekdays"
-                                            class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500"
-                                        >
-                                        {{ $label }}
-                                    </label>
+                                            :value="$day"
+                                            :label="$label"
+                                        />
+                                    </div>
                                 @endforeach
                             </div>
-                            @error('scrapingScheduleWeekdays') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
-                            @error('scrapingScheduleWeekdays.*') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                            @error('scrapingScheduleWeekdays')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            @error('scrapingScheduleWeekdays.*')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
                     </div>
                 </div>
 
-                <div class="grid gap-6 xl:grid-cols-2">
-                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-5">
-                        <h3 class="text-base font-semibold text-gray-900">Lotto 6aus49</h3>
-                        <label for="lotto-scraping-url" class="mt-5 block text-sm font-semibold text-gray-700">Scraping-URL</label>
-                        <input
-                            id="lotto-scraping-url"
-                            type="url"
-                            wire:model.defer="lottoScrapingUrl"
-                            placeholder="https://www.lotto.de/lotto-6aus49/lottozahlen"
-                            class="mt-2 block w-full rounded-md border border-gray-300 bg-white p-3 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        >
-                        @error('lottoScrapingUrl') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
-
-                        <div class="mt-5 flex flex-wrap justify-end gap-3">
-                            <button
-                                type="button"
-                                wire:click="testScrapeGame('{{ \App\Models\LotteryDraw::GAME_LOTTO_6AUS49 }}')"
-                                wire:loading.attr="disabled"
-                                wire:target="testScrapeGame('{{ \App\Models\LotteryDraw::GAME_LOTTO_6AUS49 }}')"
-                                class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-                            >
-                                <span wire:loading.remove wire:target="testScrapeGame('{{ \App\Models\LotteryDraw::GAME_LOTTO_6AUS49 }}')">Direkt testen</span>
-                                <span wire:loading wire:target="testScrapeGame('{{ \App\Models\LotteryDraw::GAME_LOTTO_6AUS49 }}')">Teste...</span>
-                            </button>
-                            <button
-                                type="button"
-                                wire:click="scrapeGame('{{ \App\Models\LotteryDraw::GAME_LOTTO_6AUS49 }}')"
-                                wire:loading.attr="disabled"
-                                class="rounded-md border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-60"
-                            >
-                                Job starten
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-5">
-                        <h3 class="text-base font-semibold text-gray-900">EuroJackpot</h3>
-                        <label for="eurojackpot-scraping-url" class="mt-5 block text-sm font-semibold text-gray-700">Scraping-URL</label>
-                        <input
-                            id="eurojackpot-scraping-url"
-                            type="url"
-                            wire:model.defer="euroJackpotScrapingUrl"
-                            placeholder="https://www.lotto.de/eurojackpot/zahlen"
-                            class="mt-2 block w-full rounded-md border border-gray-300 bg-white p-3 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        >
-                        @error('euroJackpotScrapingUrl') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
-
-                        <div class="mt-5 flex flex-wrap justify-end gap-3">
-                            <button
-                                type="button"
-                                wire:click="testScrapeGame('{{ \App\Models\LotteryDraw::GAME_EUROJACKPOT }}')"
-                                wire:loading.attr="disabled"
-                                wire:target="testScrapeGame('{{ \App\Models\LotteryDraw::GAME_EUROJACKPOT }}')"
-                                class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-                            >
-                                <span wire:loading.remove wire:target="testScrapeGame('{{ \App\Models\LotteryDraw::GAME_EUROJACKPOT }}')">Direkt testen</span>
-                                <span wire:loading wire:target="testScrapeGame('{{ \App\Models\LotteryDraw::GAME_EUROJACKPOT }}')">Teste...</span>
-                            </button>
-                            <button
-                                type="button"
-                                wire:click="scrapeGame('{{ \App\Models\LotteryDraw::GAME_EUROJACKPOT }}')"
-                                wire:loading.attr="disabled"
-                                class="rounded-md border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-60"
-                            >
-                                Job starten
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                @if ($lastScrapeResult)
-                    <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-5">
-                        <div class="flex flex-wrap items-start justify-between gap-3">
-                            <div>
-                                <h3 class="text-base font-semibold text-emerald-950">Letztes Scraping-Ergebnis</h3>
-                                <p class="mt-1 text-sm text-emerald-800">
-                                    Direkt aus der GUI abgerufen und in der Historie gespeichert.
-                                </p>
-                            </div>
-                            <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-900">
-                                {{ $lastScrapeResult['stored_at'] }}
-                            </span>
-                        </div>
-
-                        <div class="mt-5 grid gap-4 md:grid-cols-4">
-                            <div class="rounded-md bg-white p-4 shadow-sm">
-                                <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Spielart</p>
-                                <p class="mt-2 text-sm font-semibold text-gray-900">{{ $lastScrapeResult['game'] }}</p>
-                            </div>
-                            <div class="rounded-md bg-white p-4 shadow-sm">
-                                <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Datum</p>
-                                <p class="mt-2 text-sm font-semibold text-gray-900">{{ $lastScrapeResult['draw_date'] }}</p>
-                            </div>
-                            <div class="rounded-md bg-white p-4 shadow-sm">
-                                <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Zahlen</p>
-                                <p class="mt-2 text-sm font-semibold text-gray-900">{{ $lastScrapeResult['numbers'] }}</p>
-                            </div>
-                            <div class="rounded-md bg-white p-4 shadow-sm">
-                                <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Zusatz</p>
-                                <p class="mt-2 text-sm font-semibold text-gray-900">{{ $lastScrapeResult['bonus_numbers'] }}</p>
+                <x-ui.accordion.tabs
+                    :tabs="[
+                        'scheduler' => ['label' => 'Scheduler'],
+                        'sources'   => ['label' => 'Quellen'],
+                        'insights'  => ['label' => 'Insights'],
+                    ]"
+                    default="sources"
+                    persistKey="admin-settings.games"
+                    class="space-y-6"
+                >
+                    <x-slot name="scheduler">
+                        <div class="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-5">
+                            <h3 class="text-base font-semibold text-gray-900">Planung &amp; Trigger</h3>
+                            <p class="text-sm text-gray-500">
+                                Lege fest, wann der Scheduler ausgefuehrt wird. Die Einstellungen gelten fuer alle Spielarten.
+                            </p>
+                            <div class="rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
+                                Der Scheduler nutzt Laravel Cronjobs. Stelle sicher, dass dein System-Cron
+                                <code class="rounded bg-white px-1 py-0.5 text-xs">php artisan schedule:run</code>
+                                regelmaessig aufruft.
                             </div>
                         </div>
+                    </x-slot>
 
-                        <p class="mt-4 break-all text-xs text-emerald-800">
-                            Quelle: {{ $lastScrapeResult['source_url'] }}
-                        </p>
-                    </div>
-                @endif
+                    <x-slot name="sources">
+                        <div class="grid gap-6 xl:grid-cols-2">
+                            <div class="space-y-5 rounded-lg border border-gray-200 bg-gray-50 p-5">
+                                <div>
+                                    <h3 class="text-base font-semibold text-gray-900">Lotto 6aus49</h3>
+                                    <p class="text-sm text-gray-500">
+                                        URL mit den aktuellen Lottozahlen (inklusive Superzahl).
+                                    </p>
+                                </div>
 
-                @if ($lastHistoricalScrapeDispatch)
-                    <div class="rounded-lg border border-indigo-200 bg-indigo-50 p-5">
-                        <div class="flex flex-wrap items-start justify-between gap-3">
-                            <div>
-                                <h3 class="text-base font-semibold text-indigo-950">Historischer Scan gestartet</h3>
-                                <p class="mt-1 text-sm text-indigo-800">
-                                    {{ $lastHistoricalScrapeDispatch['job_count'] }} Jobs fuer {{ implode(', ', $lastHistoricalScrapeDispatch['games']) }}:
-                                    {{ implode(', ', $lastHistoricalScrapeDispatch['years']) }}.
-                                </p>
+                                <label for="lotto-scraping-url" class="block text-sm font-semibold text-gray-700">
+                                    Scraping-URL
+                                </label>
+                                <input
+                                    id="lotto-scraping-url"
+                                    type="url"
+                                    wire:model.defer="lottoScrapingUrl"
+                                    placeholder="https://www.lotto.de/lotto-6aus49/lottozahlen"
+                                    class="mt-2 block w-full rounded-md border border-gray-300 bg-white p-3 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                >
+                                @error('lottoScrapingUrl')
+                                    <p class="text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+
+                                <div class="flex flex-wrap justify-end gap-3">
+                                    <button
+                                        type="button"
+                                        wire:click="testScrapeGame('{{ \App\Models\LotteryDraw::GAME_LOTTO_6AUS49 }}')"
+                                        wire:loading.attr="disabled"
+                                        wire:target="testScrapeGame('{{ \App\Models\LotteryDraw::GAME_LOTTO_6AUS49 }}')"
+                                        class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                                    >
+                                        <span wire:loading.remove wire:target="testScrapeGame('{{ \App\Models\LotteryDraw::GAME_LOTTO_6AUS49 }}')">Direkt testen</span>
+                                        <span wire:loading wire:target="testScrapeGame('{{ \App\Models\LotteryDraw::GAME_LOTTO_6AUS49 }}')">Teste...</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        wire:click="scrapeGame('{{ \App\Models\LotteryDraw::GAME_LOTTO_6AUS49 }}')"
+                                        wire:loading.attr="disabled"
+                                        class="rounded-md border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-60"
+                                    >
+                                        Job starten
+                                    </button>
+                                </div>
                             </div>
-                            <span class="rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-900">
-                                {{ $lastHistoricalScrapeDispatch['started_at'] }}
-                            </span>
+
+                            <div class="space-y-5 rounded-lg border border-gray-200 bg-gray-50 p-5">
+                                <div>
+                                    <h3 class="text-base font-semibold text-gray-900">EuroJackpot</h3>
+                                    <p class="text-sm text-gray-500">
+                                        URL mit den aktuellen EuroJackpot-Zahlen.
+                                    </p>
+                                </div>
+
+                                <label for="eurojackpot-scraping-url" class="block text-sm font-semibold text-gray-700">
+                                    Scraping-URL
+                                </label>
+                                <input
+                                    id="eurojackpot-scraping-url"
+                                    type="url"
+                                    wire:model.defer="euroJackpotScrapingUrl"
+                                    placeholder="https://www.lotto.de/eurojackpot/zahlen"
+                                    class="mt-2 block w-full rounded-md border border-gray-300 bg-white p-3 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                >
+                                @error('euroJackpotScrapingUrl')
+                                    <p class="text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+
+                                <div class="flex flex-wrap justify-end gap-3">
+                                    <button
+                                        type="button"
+                                        wire:click="testScrapeGame('{{ \App\Models\LotteryDraw::GAME_EUROJACKPOT }}')"
+                                        wire:loading.attr="disabled"
+                                        wire:target="testScrapeGame('{{ \App\Models\LotteryDraw::GAME_EUROJACKPOT }}')"
+                                        class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                                    >
+                                        <span wire:loading.remove wire:target="testScrapeGame('{{ \App\Models\LotteryDraw::GAME_EUROJACKPOT }}')">Direkt testen</span>
+                                        <span wire:loading wire:target="testScrapeGame('{{ \App\Models\LotteryDraw::GAME_EUROJACKPOT }}')">Teste...</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        wire:click="scrapeGame('{{ \App\Models\LotteryDraw::GAME_EUROJACKPOT }}')"
+                                        wire:loading.attr="disabled"
+                                        class="rounded-md border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-60"
+                                    >
+                                        Job starten
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                @endif
+                    </x-slot>
 
-                <div class="rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
-                    Lotto.de-URLs werden automatisch ueber die internen JSON-Endpunkte von Lotto.de verarbeitet. Andere Seiten werden weiterhin ueber erkennbare Texte wie <strong>Gewinnzahlen</strong>, <strong>Superzahl</strong> oder <strong>Eurozahlen</strong> geparst.
-                </div>
+                    <x-slot name="insights">
+                        <div class="space-y-6">
+                            @if ($lastScrapeResult)
+                                <div class="space-y-4 rounded-lg border border-emerald-200 bg-emerald-50 p-5">
+                                    <div class="flex flex-wrap items-start justify-between gap-3">
+                                        <div>
+                                            <h3 class="text-base font-semibold text-emerald-950">Letztes Scraping-Ergebnis</h3>
+                                            <p class="mt-1 text-sm text-emerald-800">
+                                                Direkt aus der GUI abgerufen und in der Historie gespeichert.
+                                            </p>
+                                        </div>
+                                        <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-900">
+                                            {{ $lastScrapeResult['stored_at'] }}
+                                        </span>
+                                    </div>
 
-                <div class="flex justify-end">
-                    <button
-                        type="button"
-                        wire:click="saveGameSettings"
-                        wire:loading.attr="disabled"
-                        class="inline-flex items-center justify-center rounded-md bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 disabled:opacity-60"
-                    >
-                        Speichern
-                    </button>
-                </div>
-            </div>
-        @endif
+                                    <div class="grid gap-4 md:grid-cols-4">
+                                        <div class="rounded-md bg-white p-4 shadow-sm">
+                                            <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Spielart</p>
+                                            <p class="mt-2 text-sm font-semibold text-gray-900">{{ $lastScrapeResult['game'] }}</p>
+                                        </div>
+                                        <div class="rounded-md bg-white p-4 shadow-sm">
+                                            <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Datum</p>
+                                            <p class="mt-2 text-sm font-semibold text-gray-900">{{ $lastScrapeResult['draw_date'] }}</p>
+                                        </div>
+                                        <div class="rounded-md bg-white p-4 shadow-sm">
+                                            <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Zahlen</p>
+                                            <p class="mt-2 text-sm font-semibold text-gray-900">{{ $lastScrapeResult['numbers'] }}</p>
+                                        </div>
+                                        <div class="rounded-md bg-white p-4 shadow-sm">
+                                            <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Zusatz</p>
+                                            <p class="mt-2 text-sm font-semibold text-gray-900">{{ $lastScrapeResult['bonus_numbers'] }}</p>
+                                        </div>
+                                    </div>
 
-        @if ($activeTab === 'csv-import')
-            <div class="space-y-8 px-6 py-6">
+                                    <p class="break-all text-xs text-emerald-800">
+                                        Quelle: {{ $lastScrapeResult['source_url'] }}
+                                    </p>
+                                </div>
+                            @endif
+
+                            @if ($lastHistoricalScrapeDispatch)
+                                <div class="space-y-4 rounded-lg border border-indigo-200 bg-indigo-50 p-5">
+                                    <div class="flex flex-wrap items-start justify-between gap-3">
+                                        <div>
+                                            <h3 class="text-base font-semibold text-indigo-950">Historischer Scan gestartet</h3>
+                                            <p class="mt-1 text-sm text-indigo-800">
+                                                {{ $lastHistoricalScrapeDispatch['job_count'] }} Jobs fuer {{ implode(', ', $lastHistoricalScrapeDispatch['games']) }}:
+                                                {{ implode(', ', $lastHistoricalScrapeDispatch['years']) }}.
+                                            </p>
+                                        </div>
+                                        <span class="rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-900">
+                                            {{ $lastHistoricalScrapeDispatch['started_at'] }}
+                                        </span>
+                                    </div>
+                                </div>
+                            @endif
+
+                            <div class="rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
+                                Lotto.de-URLs werden automatisch ueber die internen JSON-Endpunkte von Lotto.de verarbeitet.
+                                Andere Seiten werden weiterhin ueber erkennbare Texte wie <strong>Gewinnzahlen</strong>,
+                                <strong>Superzahl</strong> oder <strong>Eurozahlen</strong> geparst.
+                            </div>
+
+                            <div class="flex justify-end">
+                                <button
+                                    type="button"
+                                    wire:click="saveGameSettings"
+                                    wire:loading.attr="disabled"
+                                    class="inline-flex items-center justify-center rounded-md bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 disabled:opacity-60"
+                                >
+                                    Speichern
+                                </button>
+                            </div>
+                        </div>
+                    </x-slot>
+                </x-ui.accordion.tabs>
+            </x-ui.tabsnav.panel>
+
+            {{--
+            <x-ui.tabsnav.panel name="csv-import" class="space-y-8">
                 <div>
                     <h2 class="text-lg font-semibold text-gray-900">Ziehungen importieren</h2>
                     <p class="mt-1 text-sm text-gray-500">
@@ -273,24 +318,30 @@
                     </p>
                 </div>
 
-                <form wire:submit.prevent="importCsv" class="rounded-lg border border-gray-200 bg-gray-50 p-5">
-                    <label for="csv-file" class="block text-sm font-semibold text-gray-700">CSV-Datei</label>
-                    <input
-                        id="csv-file"
-                        type="file"
-                        wire:model="csvFile"
-                        accept=".csv,.txt,text/csv,text/plain"
-                        class="mt-2 block w-full rounded-md border border-gray-300 bg-white p-3 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    >
-                    @error('csvFile') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
-
-                    <div class="mt-4 rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
-                        Erwartete Formate: <strong>Lotto 6aus49</strong> mit sechs Gewinnzahlen und Superzahl oder <strong>EuroJackpot</strong> mit 5 aus 50 plus zwei Eurozahlen.
+                <form wire:submit.prevent="importCsv" class="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-5">
+                    <div>
+                        <label for="csv-file" class="block text-sm font-semibold text-gray-700">CSV-Datei</label>
+                        <input
+                            id="csv-file"
+                            type="file"
+                            wire:model="csvFile"
+                            accept=".csv,.txt,text/csv,text/plain"
+                            class="mt-2 block w-full rounded-md border border-gray-300 bg-white p-3 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        >
+                        @error('csvFile')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
 
-                    <div class="mt-5 flex items-center justify-between gap-4">
+                    <div class="rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
+                        Erwartete Formate: <strong>Lotto 6aus49</strong> mit sechs Gewinnzahlen und Superzahl oder
+                        <strong>EuroJackpot</strong> mit 5 aus 50 plus zwei Eurozahlen.
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-4">
                         <p class="text-sm text-gray-500">
-                            Aktuell gespeicherte Ziehungen: <span class="font-semibold text-gray-900">{{ $drawCount }}</span>
+                            Aktuell gespeicherte Ziehungen:
+                            <span class="font-semibold text-gray-900">{{ $drawCount }}</span>
                         </p>
                         <button
                             type="submit"
@@ -366,9 +417,10 @@
                         </table>
                     </div>
                 </div>
-            </div>
-        @endif
-    </div>
+            </x-ui.tabsnav.panel>
+            --}}
+        </div>
+    </x-ui.tabsnav.container>
 
     <x-dialog-modal wire:model.live="historicalScrapeModalOpen" maxWidth="2xl">
         <x-slot name="title">
@@ -383,40 +435,50 @@
 
                 <div>
                     <p class="text-sm font-semibold text-gray-700">Jahre</p>
-                    <div class="mt-2 grid max-h-56 gap-2 overflow-y-auto rounded-md border border-gray-200 bg-gray-50 p-3 sm:grid-cols-3">
+                    <div class="mt-2 grid max-h-56 gap-3 overflow-y-auto rounded-md border border-gray-200 bg-gray-50 p-3 sm:grid-cols-3">
                         @foreach ($historicalYearOptions as $year)
-                            <label class="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm">
-                                <input
-                                    type="checkbox"
-                                    value="{{ $year }}"
+                            <div class="rounded-md border border-gray-200 bg-white p-3 shadow-sm" wire:key="historical-year-{{ $year }}">
+                                <x-ui.forms.checkbox
+                                    :id="'historical-year-' . $year"
+                                    toggle
+                                    size="sm"
                                     wire:model.defer="historicalScrapeYears"
-                                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500"
-                                >
-                                {{ $year }}
-                            </label>
+                                    :value="$year"
+                                    :label="$year"
+                                />
+                            </div>
                         @endforeach
                     </div>
-                    @error('historicalScrapeYears') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
-                    @error('historicalScrapeYears.*') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                    @error('historicalScrapeYears')
+                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                    @error('historicalScrapeYears.*')
+                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <div>
                     <p class="text-sm font-semibold text-gray-700">Spiele</p>
-                    <div class="mt-2 grid gap-2 sm:grid-cols-2">
+                    <div class="mt-2 grid gap-3 sm:grid-cols-2">
                         @foreach ($gameLabels as $game => $label)
-                            <label class="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm">
-                                <input
-                                    type="checkbox"
-                                    value="{{ $game }}"
+                            <div class="rounded-md border border-gray-200 bg-white p-3 shadow-sm" wire:key="historical-game-{{ $game }}">
+                                <x-ui.forms.checkbox
+                                    :id="'historical-game-' . $game"
+                                    toggle
+                                    size="sm"
                                     wire:model.defer="historicalScrapeGames"
-                                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500"
-                                >
-                                {{ $label }}
-                            </label>
+                                    :value="$game"
+                                    :label="$label"
+                                />
+                            </div>
                         @endforeach
                     </div>
-                    @error('historicalScrapeGames') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
-                    @error('historicalScrapeGames.*') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                    @error('historicalScrapeGames')
+                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                    @error('historicalScrapeGames.*')
+                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
