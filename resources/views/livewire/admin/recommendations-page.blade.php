@@ -183,7 +183,7 @@
             <x-buttons.button-basic
                 type="button"
                 wire:click="closeStatsModal"
-                mode="basic"
+                mode="close"
                 size="sm"
             >
                 <i class="mdi mdi-close-circle-outline me-1 text-lg"></i>
