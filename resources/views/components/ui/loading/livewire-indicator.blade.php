@@ -9,6 +9,7 @@
     <div
         wire:loading.delay
         @if($target) wire:target="{{ $target }}" @endif
+        wire:loading.class.remove="hidden"
         class="absolute inset-0 z-20 flex items-center justify-center rounded-lg bg-white/70 backdrop-blur-[2px] hidden"
     >
         <div class="relative flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-lg ring-1 ring-gray-200">
