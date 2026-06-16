@@ -8,12 +8,9 @@
 @php
     $drum = <<<'HTML'
         <div class="relative flex h-20 w-20 items-center justify-center">
-            <div class="absolute inset-2 rounded-full border border-slate-300 bg-white/80 shadow-lg"></div>
-            <div class="absolute inset-[0.9rem] rounded-full border border-slate-200 bg-slate-50/80"></div>
-            <div class="absolute left-1/2 top-1 h-3 w-9 -translate-x-1/2 rounded-t-full border-x border-t border-slate-300 bg-white"></div>
             <div class="absolute bottom-1 left-1/2 h-2 w-10 -translate-x-1/2 rounded-full bg-slate-200"></div>
 
-            <div class="relative h-14 w-14 animate-spin rounded-full border border-dashed border-slate-300 [animation-duration:1.15s]">
+            <div class="relative h-14 w-14 animate-spin rounded-full [animation-duration:1.15s]">
                 <span class="absolute left-1/2 top-0 flex h-5 w-5 -translate-x-1/2 -translate-y-1 items-center justify-center rounded-full bg-white text-[10px] font-bold text-slate-700 shadow-sm ring-1 ring-slate-300">6</span>
                 <span class="absolute right-0 top-1/2 flex h-5 w-5 -translate-y-1/2 translate-x-1 items-center justify-center rounded-full bg-white text-[10px] font-bold text-slate-700 shadow-sm ring-1 ring-slate-300">21</span>
                 <span class="absolute bottom-0 left-1/2 flex h-5 w-5 -translate-x-1/2 translate-y-1 items-center justify-center rounded-full bg-white text-[10px] font-bold text-slate-700 shadow-sm ring-1 ring-slate-300">9</span>
