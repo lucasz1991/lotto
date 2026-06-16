@@ -68,20 +68,6 @@
                                 </div>
                             </div>
 
-                            <div class="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
-                                <span class="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-gray-700 shadow-sm ring-1 ring-gray-200">
-                                    <i class="mdi mdi-chart-bell-curve-cumulative text-base text-gray-500"></i>
-                                    {{ $recommendation['method_label'] }}
-                                </span>
-                                <span class="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-gray-700 shadow-sm ring-1 ring-gray-200">
-                                    <i class="mdi mdi-call-split text-base text-gray-500"></i>
-                                    {{ $recommendation['reuse_strategy_label'] }}
-                                </span>
-                                <span class="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-gray-700 shadow-sm ring-1 ring-gray-200">
-                                    <i class="mdi mdi-shield-check-outline text-base text-gray-500"></i>
-                                    Datenbasis {{ $recommendation['confidence'] }}
-                                </span>
-                            </div>
                         </div>
 
                         <div class="grid grid-cols-3 gap-2 xl:min-w-[640px]">
@@ -118,6 +104,42 @@
                     </div>
                 @else
                     <div class="space-y-5 border-t border-gray-100 px-4 py-5 sm:px-5">
+                        <div class="grid gap-3 grid-cols-2">
+                            <button
+                                type="button"
+                                wire:click="openStatsModal('{{ $game }}', 'main')"
+                                class="flex items-center justify-between gap-3 rounded-md border border-gray-200 bg-white px-4 py-3 text-left shadow-sm hover:border-blue-200 hover:bg-blue-50"
+                            >
+                                <span class="flex min-w-0 items-center gap-3">
+                                    <span class="inline-flex h-9 w-9 items-center justify-center rounded-md bg-white text-gray-600 shadow-sm">
+                                        <i class="mdi mdi-numeric text-lg"></i>
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block text-sm font-semibold text-gray-900">Hauptzahlen</span>
+                                        <span class="block truncate text-xs text-gray-500">Top {{ count($recommendation['main_stats']) }} Statistikwerte</span>
+                                    </span>
+                                </span>
+                                <i class="mdi mdi-open-in-new text-lg text-gray-400"></i>
+                            </button>
+
+                            <button
+                                type="button"
+                                wire:click="openStatsModal('{{ $game }}', 'bonus')"
+                                class="flex items-center justify-between gap-3 rounded-md border border-gray-200 bg-white px-4 py-3 text-left shadow-sm hover:border-amber-200 hover:bg-amber-50"
+                            >
+                                <span class="flex min-w-0 items-center gap-3">
+                                    <span class="inline-flex h-9 w-9 items-center justify-center rounded-md bg-white text-gray-600 shadow-sm">
+                                        <i class="mdi mdi-star-four-points-outline text-lg"></i>
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block text-sm font-semibold text-gray-900">{{ $isEuroJackpot ? 'Eurozahlen' : 'Superzahl' }}</span>
+                                        <span class="block truncate text-xs text-gray-500">Top {{ count($recommendation['bonus_stats']) }} Statistikwerte</span>
+                                    </span>
+                                </span>
+                                <i class="mdi mdi-open-in-new text-lg text-gray-400"></i>
+                            </button>
+                        </div>
+
                         <div>
 
                             <div class="grid gap-3">
@@ -220,41 +242,6 @@
                             </div>
                         </div>
 
-                        <div class="grid gap-3 grid-cols-2">
-                            <button
-                                type="button"
-                                wire:click="openStatsModal('{{ $game }}', 'main')"
-                                class="flex items-center justify-between gap-3 rounded-md border border-gray-200 bg-white px-4 py-3 text-left shadow-sm hover:border-blue-200 hover:bg-blue-50"
-                            >
-                                <span class="flex min-w-0 items-center gap-3">
-                                    <span class="inline-flex h-9 w-9 items-center justify-center rounded-md bg-white text-gray-600 shadow-sm">
-                                        <i class="mdi mdi-numeric text-lg"></i>
-                                    </span>
-                                    <span class="min-w-0">
-                                        <span class="block text-sm font-semibold text-gray-900">Hauptzahlen</span>
-                                        <span class="block truncate text-xs text-gray-500">Top {{ count($recommendation['main_stats']) }} Statistikwerte</span>
-                                    </span>
-                                </span>
-                                <i class="mdi mdi-open-in-new text-lg text-gray-400"></i>
-                            </button>
-
-                            <button
-                                type="button"
-                                wire:click="openStatsModal('{{ $game }}', 'bonus')"
-                                class="flex items-center justify-between gap-3 rounded-md border border-gray-200 bg-white px-4 py-3 text-left shadow-sm hover:border-amber-200 hover:bg-amber-50"
-                            >
-                                <span class="flex min-w-0 items-center gap-3">
-                                    <span class="inline-flex h-9 w-9 items-center justify-center rounded-md bg-white text-gray-600 shadow-sm">
-                                        <i class="mdi mdi-star-four-points-outline text-lg"></i>
-                                    </span>
-                                    <span class="min-w-0">
-                                        <span class="block text-sm font-semibold text-gray-900">{{ $isEuroJackpot ? 'Eurozahlen' : 'Superzahl' }}</span>
-                                        <span class="block truncate text-xs text-gray-500">Top {{ count($recommendation['bonus_stats']) }} Statistikwerte</span>
-                                    </span>
-                                </span>
-                                <i class="mdi mdi-open-in-new text-lg text-gray-400"></i>
-                            </button>
-                        </div>
                     </div>
                 @endif
             </section>
