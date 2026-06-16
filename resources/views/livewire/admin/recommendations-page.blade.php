@@ -5,6 +5,26 @@
         </div>
     </div>
 
+    <div class="grid grid-cols-2 gap-2 2xl:hidden">
+        @foreach ($recommendations as $recommendation)
+            @php
+                $game = $recommendation['game'];
+                $isEuroJackpot = $game === \App\Models\LotteryDraw::GAME_EUROJACKPOT;
+            @endphp
+
+            <button
+                type="button"
+                wire:click="showMobileGame('{{ $game }}')"
+                class="flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold {{ $activeMobileGame === $game ? ($isEuroJackpot ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-blue-200 bg-blue-50 text-blue-800') : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50' }}"
+            >
+                <span class="inline-flex h-6 w-6 items-center justify-center rounded {{ $isEuroJackpot ? 'bg-emerald-600' : 'bg-blue-600' }} text-xs font-bold text-white">
+                    {{ $isEuroJackpot ? 'EJ' : '6' }}
+                </span>
+                <span class="truncate">{{ $recommendation['label'] }}</span>
+            </button>
+        @endforeach
+    </div>
+
     <div class="grid gap-6 2xl:grid-cols-2">
         @foreach ($recommendations as $recommendation)
             @php
@@ -12,7 +32,7 @@
                 $isEuroJackpot = $game === \App\Models\LotteryDraw::GAME_EUROJACKPOT;
             @endphp
 
-            <section class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+            <section class="{{ $activeMobileGame === $game ? 'block' : 'hidden' }} overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm 2xl:block">
                 <div class="border-b border-gray-200 bg-gray-50 px-4 py-4 sm:px-5">
                     <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                         <div class="min-w-0">
@@ -33,8 +53,8 @@
                             </div>
                         </div>
 
-                        <div class="grid gap-2 sm:grid-cols-3 xl:min-w-[520px]">
-                            <x-ui.forms.select wire:model.live="gameOptions.{{ $game }}.method" title="Auswertungsart">
+                        <div class="grid grid-cols-3 gap-2 xl:min-w-[520px]">
+                            <x-ui.forms.select wire:model.live="gameOptions.{{ $game }}.method" title="Auswertungsart" compact-mobile>
                                 <x-slot name="icon">
                                     <i class="mdi mdi-chart-bell-curve-cumulative text-lg"></i>
                                 </x-slot>
@@ -45,7 +65,7 @@
                                 @endforeach
                             </x-ui.forms.select>
 
-                            <x-ui.forms.select wire:model.live="gameOptions.{{ $game }}.row_count" title="Anzahl Felder">
+                            <x-ui.forms.select wire:model.live="gameOptions.{{ $game }}.row_count" title="Anzahl Felder" compact-mobile>
                                 <x-slot name="icon">
                                     <i class="mdi mdi-view-grid-outline text-lg"></i>
                                 </x-slot>
@@ -56,7 +76,7 @@
                                 @endforeach
                             </x-ui.forms.select>
 
-                            <x-ui.forms.select wire:model.live="gameOptions.{{ $game }}.stats_limit" title="Anzahl Statistikzeilen">
+                            <x-ui.forms.select wire:model.live="gameOptions.{{ $game }}.stats_limit" title="Anzahl Statistikzeilen" compact-mobile>
                                 <x-slot name="icon">
                                     <i class="mdi mdi-format-list-numbered text-lg"></i>
                                 </x-slot>

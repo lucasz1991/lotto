@@ -15,6 +15,8 @@ class RecommendationsPage extends Component
 
     public string $selectedStatsType = 'main';
 
+    public string $activeMobileGame = '';
+
     public function mount(LotteryRecommendationService $recommendations): void
     {
         $this->gameOptions = collect($recommendations->defaultGameOptions())
@@ -24,11 +26,15 @@ class RecommendationsPage extends Component
                 'stats_limit' => $options['stats_limit'],
             ])
             ->all();
+        $this->activeMobileGame = array_key_first($this->gameOptions) ?? '';
     }
 
     public function render(LotteryRecommendationService $recommendations)
     {
         $this->gameOptions = $recommendations->normalizeGameOptions($this->gameOptions);
+        $this->activeMobileGame = array_key_exists($this->activeMobileGame, $this->gameOptions)
+            ? $this->activeMobileGame
+            : (array_key_first($this->gameOptions) ?? '');
         $recommendationsByGame = $recommendations->recommendationsForGames($this->gameOptions);
 
         return view('livewire.admin.recommendations-page', [
@@ -54,6 +60,13 @@ class RecommendationsPage extends Component
     public function closeStatsModal(): void
     {
         $this->statsModalOpen = false;
+    }
+
+    public function showMobileGame(string $game): void
+    {
+        if (array_key_exists($game, $this->gameOptions)) {
+            $this->activeMobileGame = $game;
+        }
     }
 
     protected function selectedStatsModal(array $recommendations): ?array

@@ -5,6 +5,7 @@
     'help' => null,
     'errorFor' => null,
     'disabled' => false,
+    'compactMobile' => false,
 ])
 
 @php
@@ -32,7 +33,7 @@
             @if($name) name="{{ $name }}" @endif
             @if($disabled) disabled @endif
             {!! $attributes->merge([
-                'class' => 'block h-10 w-full rounded-md border-gray-300 bg-white '.($hasIcon ? 'pl-9' : 'pl-3').' pr-8 text-sm font-medium text-gray-800 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500',
+                'class' => 'block h-10 w-full rounded-md border-gray-300 bg-white '.($hasIcon ? 'pl-9' : 'pl-3').' pr-8 text-sm font-medium shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500 '.($compactMobile ? 'text-transparent sm:text-gray-800' : 'text-gray-800'),
             ]) !!}
         >
             {{ $slot }}
