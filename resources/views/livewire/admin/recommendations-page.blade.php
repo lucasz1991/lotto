@@ -1,12 +1,4 @@
 <div class="space-y-5">
-    <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-            <div>
-                <h1 class="text-2xl font-semibold text-gray-900">Empfehlungen</h1>
-            </div>
-
-        </div>
-    </div>
 
     <div class="grid grid-cols-2 gap-2 rounded-lg border border-gray-200 bg-white p-1 shadow-sm 2xl:hidden">
         @foreach ($recommendations as $recommendation)
