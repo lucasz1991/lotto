@@ -25,6 +25,10 @@ class AdminDashboard extends Component
 
     public int $scrapedDrawsTotal = 0;
 
+    public string $latestDrawSortField = 'draw_date';
+
+    public string $latestDrawSortDirection = 'desc';
+
     public function mount(): void
     {
         $this->refreshDashboardData();
@@ -47,12 +51,31 @@ class AdminDashboard extends Component
         $this->gameSummaries = $this->buildGameSummaries();
     }
 
+    public function sortLatestDrawsBy(string $field): void
+    {
+        if (! in_array($field, $this->latestDrawSortableFields(), true)) {
+            return;
+        }
+
+        if ($this->latestDrawSortField === $field) {
+            $this->latestDrawSortDirection = $this->latestDrawSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->latestDrawSortField = $field;
+            $this->latestDrawSortDirection = $field === 'draw_date' ? 'desc' : 'asc';
+        }
+    }
+
     public function render()
     {
         return view('livewire.admin-dashboard', [
             'latestDraws' => Schema::hasTable('lottery_draws')
-                ? LotteryDraw::query()->latest('draw_date')->limit(6)->get()
+                ? LotteryDraw::query()
+                    ->orderBy($this->latestDrawSortField, $this->latestDrawSortDirection)
+                    ->orderByDesc('id')
+                    ->limit(6)
+                    ->get()
                 : collect(),
+            'latestDrawColumns' => $this->latestDrawColumns(),
             'latestScrapedDraw' => Schema::hasTable('lottery_draws')
                 ? LotteryDraw::query()->whereNull('lottery_import_id')->latest('updated_at')->first()
                 : null,
@@ -114,5 +137,20 @@ class AdminDashboard extends Component
         }
 
         return $count;
+    }
+
+    protected function latestDrawColumns(): array
+    {
+        return [
+            ['label' => 'Spielart', 'key' => 'game', 'width' => '1fr', 'sortable' => true],
+            ['label' => 'Ziehung', 'key' => 'draw_date', 'width' => '140px', 'sortable' => true],
+            ['label' => 'Zahlen', 'key' => 'numbers', 'width' => 'minmax(220px, 1.4fr)'],
+            ['label' => 'Aktualisiert', 'key' => 'updated_at', 'width' => '160px', 'sortable' => true],
+        ];
+    }
+
+    protected function latestDrawSortableFields(): array
+    {
+        return ['game', 'draw_date', 'updated_at'];
     }
 }

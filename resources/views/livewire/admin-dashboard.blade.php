@@ -105,47 +105,17 @@
                 <a href="{{ route('admin.history') }}" class="text-sm font-semibold text-blue-600 hover:text-blue-700">Alle ansehen</a>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 text-sm">
-                    <thead class="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                        <tr>
-                            <th class="px-5 py-3">Spielart</th>
-                            <th class="px-5 py-3">Ziehung</th>
-                            <th class="px-5 py-3">Zahlen</th>
-                            <th class="px-5 py-3">Aktualisiert</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100 bg-white">
-                        @forelse ($latestDraws as $draw)
-                            @php
-                                $isEuroJackpot = $draw->game === \App\Models\LotteryDraw::GAME_EUROJACKPOT;
-                                $bonusNumbers = $draw->bonus_numbers ?? [];
-                                $bonus = $bonusNumbers['euro_numbers'] ?? [$bonusNumbers['superzahl'] ?? null];
-                                $bonus = array_values(array_filter((array) $bonus, fn ($value) => $value !== null && $value !== ''));
-                            @endphp
-                            <tr class="hover:bg-slate-50">
-                                <td class="whitespace-nowrap px-5 py-3 font-semibold text-gray-900">{{ $draw->gameLabel() }}</td>
-                                <td class="whitespace-nowrap px-5 py-3 text-gray-600">{{ $draw->draw_date?->format('d.m.Y') }}</td>
-                                <td class="px-5 py-3">
-                                    <div class="flex min-w-[220px] flex-wrap gap-1.5">
-                                        @foreach ($draw->numbers ?? [] as $number)
-                                            <x-ui.lottery.number-ball :number="$number" :game="$draw->game" size="xs" />
-                                        @endforeach
-
-                                        @foreach ($bonus as $number)
-                                            <x-ui.lottery.number-ball :number="$number" :game="$draw->game" size="xs" bonus />
-                                        @endforeach
-                                    </div>
-                                </td>
-                                <td class="whitespace-nowrap px-5 py-3 text-gray-600">{{ $draw->updated_at?->format('d.m.Y H:i') }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4" class="px-5 py-8 text-center text-gray-500">Noch keine Ziehungen vorhanden.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+            <div class="px-5 pb-4">
+                <x-ui.tables.table
+                    :columns="$latestDrawColumns"
+                    :items="$latestDraws"
+                    :sort-by="$latestDrawSortField"
+                    :sort-dir="$latestDrawSortDirection"
+                    sort-method="sortLatestDrawsBy"
+                    row-view="livewire.admin.dashboard.latest-draw-row"
+                    empty="Noch keine Ziehungen vorhanden."
+                    class="mt-0"
+                />
             </div>
         </section>
     </div>
