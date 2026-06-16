@@ -35,7 +35,7 @@ $maxWidth = [
         <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
     </div>
 
-    <div x-show="show" class="mx-auto mb-6 flex max-h-[calc(100vh-3rem)] flex-col overflow-y-auto rounded-lg bg-white shadow-xl transform transition-all sm:w-full {{ $maxWidth }}"
+    <div x-show="show" class="relative mx-auto mb-6 flex max-h-[calc(100vh-3rem)] flex-col overflow-y-auto rounded-lg bg-white shadow-xl transform transition-all sm:w-full {{ $maxWidth }}"
                     x-trap.inert.noscroll="show"
                     x-transition:enter="ease-out duration-300"
                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
@@ -43,7 +43,15 @@ $maxWidth = [
                     x-transition:leave="ease-in duration-200"
                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
-                    
+        <button
+            type="button"
+            x-on:click="show = false"
+            class="absolute right-3 top-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            aria-label="Modal schliessen"
+        >
+            <i class="mdi mdi-close text-xl"></i>
+        </button>
+
         {{ $slot }}
     </div>
 </div>
