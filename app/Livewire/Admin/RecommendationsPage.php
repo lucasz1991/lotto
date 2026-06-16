@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Services\Lottery\LotteryRecommendationService;
 use Livewire\Component;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RecommendationsPage extends Component
 {
@@ -74,6 +75,22 @@ class RecommendationsPage extends Component
         }
     }
 
+    public function exportTxt(LotteryRecommendationService $recommendations): StreamedResponse
+    {
+        $this->gameOptions = $recommendations->normalizeGameOptions($this->gameOptions);
+        $recommendationsByGame = $recommendations->recommendationsForGames($this->gameOptions);
+        $content = $this->buildTxtExport($recommendationsByGame);
+        $filename = 'lotto-empfehlungen-'.now()->format('Y-m-d-His').'.txt';
+
+        return response()->streamDownload(
+            static function () use ($content): void {
+                echo $content;
+            },
+            $filename,
+            ['Content-Type' => 'text/plain; charset=UTF-8']
+        );
+    }
+
     protected function selectedStatsModal(array $recommendations): ?array
     {
         if (! $this->selectedStatsGame || ! isset($recommendations[$this->selectedStatsGame])) {
@@ -91,6 +108,52 @@ class RecommendationsPage extends Component
             'is_bonus' => $isBonus,
             'stats' => $isBonus ? $recommendation['bonus_stats'] : $recommendation['main_stats'],
         ];
+    }
+
+    protected function buildTxtExport(array $recommendations): string
+    {
+        $lines = [
+            'Lotto Empfehlungen',
+            'Exportiert am: '.now()->format('d.m.Y H:i:s'),
+            '',
+        ];
+
+        foreach ($recommendations as $recommendation) {
+            $options = $this->gameOptions[$recommendation['game']] ?? [];
+            $bonusLabel = $recommendation['game'] === \App\Models\LotteryDraw::GAME_EUROJACKPOT
+                ? 'Eurozahlen'
+                : 'Superzahl';
+
+            $lines[] = str_repeat('=', 48);
+            $lines[] = $recommendation['label'];
+            $lines[] = str_repeat('=', 48);
+            $lines[] = 'Datenbasis: '.$recommendation['draw_count'].' Ziehungen';
+            $lines[] = 'Letzte Ziehung: '.($recommendation['latest_draw_date']?->format('d.m.Y') ?? '-');
+            $lines[] = 'Auswertungsart: '.$recommendation['method_label'].' ('.($options['method'] ?? $recommendation['method']).')';
+            $lines[] = 'Zahlenverteilung: '.$recommendation['reuse_strategy_label'].' ('.($options['reuse_strategy'] ?? $recommendation['reuse_strategy']).')';
+            $lines[] = '';
+            $lines[] = 'Empfohlene Felder:';
+
+            if ($recommendation['rows'] === []) {
+                $lines[] = '- Keine Empfehlungen vorhanden.';
+            }
+
+            foreach ($recommendation['rows'] as $index => $row) {
+                $lines[] = sprintf(
+                    '%d. Hauptzahlen: %s | %s: %s',
+                    $index + 1,
+                    implode(', ', $row['main_numbers']),
+                    $bonusLabel,
+                    implode(', ', $row['bonus_numbers'])
+                );
+            }
+
+            
+            $lines[] = '';
+        }
+
+
+        return implode(PHP_EOL, $lines).PHP_EOL;
     }
 
     protected function methodSelectOptions(array $methodLabels): array

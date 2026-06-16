@@ -9,6 +9,16 @@
             </div>
 
             <div class="flex flex-wrap gap-2">
+                <button
+                    type="button"
+                    wire:click="exportTxt"
+                    wire:loading.attr="disabled"
+                    wire:target="exportTxt"
+                    class="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-60"
+                >
+                    <i class="mdi mdi-file-download-outline text-lg"></i>
+                    Export
+                </button>
                 <a href="{{ route('admin.history') }}" class="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
                     <i class="mdi mdi-history text-lg"></i>
                     Historie

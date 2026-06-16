@@ -2,9 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\Admin\RecommendationsPage;
 use App\Models\LotteryDraw;
 use App\Services\Lottery\LotteryRecommendationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class LotteryRecommendationTest extends TestCase
@@ -127,5 +130,30 @@ class LotteryRecommendationTest extends TestCase
         $this->assertSame(LotteryRecommendationService::REUSE_ALLOW, $recommendations[LotteryDraw::GAME_EUROJACKPOT]['reuse_strategy']);
         $this->assertCount(2, $recommendations[LotteryDraw::GAME_LOTTO_6AUS49]['rows']);
         $this->assertCount(1, $recommendations[LotteryDraw::GAME_EUROJACKPOT]['rows']);
+    }
+
+    public function test_recommendations_can_be_exported_as_txt(): void
+    {
+        Carbon::setTestNow('2026-06-16 12:30:00');
+
+        LotteryDraw::query()->create([
+            'game' => LotteryDraw::GAME_LOTTO_6AUS49,
+            'draw_date' => '2026-06-01',
+            'numbers' => [1, 2, 3, 4, 5, 6],
+            'bonus_numbers' => ['superzahl' => 1],
+        ]);
+
+        Livewire::test(RecommendationsPage::class)
+            ->set('gameOptions.'.LotteryDraw::GAME_LOTTO_6AUS49.'.method', LotteryRecommendationService::METHOD_OVERDUE)
+            ->set('gameOptions.'.LotteryDraw::GAME_LOTTO_6AUS49.'.row_count', 2)
+            ->set('gameOptions.'.LotteryDraw::GAME_LOTTO_6AUS49.'.stats_limit', 10)
+            ->call('exportTxt')
+            ->assertFileDownloaded(
+                'lotto-empfehlungen-2026-06-16-123000.txt',
+                null,
+                'text/plain; charset=UTF-8'
+            );
+
+        Carbon::setTestNow();
     }
 }
