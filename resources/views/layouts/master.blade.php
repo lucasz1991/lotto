@@ -15,6 +15,7 @@
     @yield('css')
 </head>
     <body data-mode="light" data-sidebar-size="lg" class="group font-notosans">
+        <x-ui.loading.livewire-indicator />
         <!-- sidebar -->
         @include('layouts.sidebar')
         <!-- topbar -->

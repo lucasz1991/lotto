@@ -41,14 +41,21 @@
         @endforeach
     </div>
 
-    <div class="grid gap-6 2xl:grid-cols-2">
-        @foreach ($recommendations as $recommendation)
-            @php
-                $game = $recommendation['game'];
-                $isEuroJackpot = $game === \App\Models\LotteryDraw::GAME_EUROJACKPOT;
-            @endphp
+    <div class="relative">
+        <x-ui.loading.livewire-indicator mode="overlay" target="gameOptions" text="Empfehlungen werden aktualisiert..." />
 
-            <section class="{{ $activeMobileGame === $game ? 'block' : 'hidden' }} overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm 2xl:block">
+        <div
+            class="grid gap-6 transition-opacity duration-200 2xl:grid-cols-2"
+            wire:loading.class="opacity-45"
+            wire:target="gameOptions"
+        >
+            @foreach ($recommendations as $recommendation)
+                @php
+                    $game = $recommendation['game'];
+                    $isEuroJackpot = $game === \App\Models\LotteryDraw::GAME_EUROJACKPOT;
+                @endphp
+
+                <section class="{{ $activeMobileGame === $game ? 'block' : 'hidden' }} overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm 2xl:block">
                 <div class="border-t-4 {{ $isEuroJackpot ? 'border-t-emerald-500 bg-emerald-50/40' : 'border-t-blue-500 bg-blue-50/40' }} px-4 py-4 sm:px-5">
                     <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                         <div class="min-w-0">
@@ -252,8 +259,9 @@
 
                     </div>
                 @endif
-            </section>
-        @endforeach
+                </section>
+            @endforeach
+        </div>
     </div>
 
     <x-dialog-modal wire:model.live="statsModalOpen" maxWidth="3xl">

@@ -1,30 +1,6 @@
-<div class="space-y-6" wire:poll.5000ms="refreshDashboardData">
-    <div class="rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div class="flex flex-wrap items-start justify-between gap-4 px-5 py-5">
-            <div>
-                <h1 class="text-2xl font-semibold text-gray-900">Lotto-Dashboard</h1>
-                <p class="mt-1 text-sm text-gray-500">
-                    Datenstand, Jahresabdeckung und letzte Aktivitaeten.
-                </p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                <a href="{{ route('admin.history') }}" class="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
-                    <i class="mdi mdi-history text-lg"></i>
-                    Historie
-                </a>
-                <a href="{{ route('admin.settings') }}" class="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
-                    <i class="mdi mdi-cog-outline text-lg"></i>
-                    Einstellungen
-                </a>
-                <a href="{{ route('admin.recommendations') }}" class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">
-                    <i class="mdi mdi-lightbulb-on-outline text-lg"></i>
-                    Empfehlungen
-                </a>
-            </div>
-        </div>
-    </div>
+<div class="space-y-6 p-2" wire:poll.5000ms="refreshDashboardData">
 
-    <div class="grid gap-4 md:grid-cols-3">
+    <div class="grid gap-4 grid-cols-3">
         <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
             <div class="flex items-center justify-between gap-3">
                 <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Ziehungen</p>
@@ -90,16 +66,6 @@
                 </div>
 
                 <div class="space-y-5 border-t border-gray-100 px-5 py-5">
-                    <div>
-                        <div class="flex items-center justify-between gap-3">
-                            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Abdeckung {{ now()->year }}</p>
-                            <p class="text-xs font-semibold text-gray-700">{{ $summary['draws_this_year'] }} / {{ $summary['expected_this_year'] }}</p>
-                        </div>
-                        <div class="mt-2 h-2 rounded-full bg-gray-100">
-                            <div class="h-2 rounded-full {{ $isEuroJackpot ? 'bg-emerald-500' : 'bg-blue-500' }}" style="width: {{ $coverage }}%"></div>
-                        </div>
-                    </div>
-
                     @if ($summary['latest_draw_date'])
                         <div>
                             <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Letzte Ziehung {{ $summary['latest_draw_date']?->format('d.m.Y') }}</p>

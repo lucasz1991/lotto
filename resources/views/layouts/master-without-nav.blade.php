@@ -14,6 +14,7 @@
 </head>
 
 <body data-mode="light" data-sidebar-size="lg" class="group">
+    <x-ui.loading.livewire-indicator />
     
     @include('layouts.no-auth-layout')
     <!-- script -->
