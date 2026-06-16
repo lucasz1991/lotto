@@ -39,10 +39,13 @@ class RecommendationsPage extends Component
 
         return view('livewire.admin.recommendations-page', [
             'methodLabels' => $recommendations->methodLabels(),
+            'methodSelectOptions' => $this->methodSelectOptions($recommendations->methodLabels()),
             'recommendations' => $recommendationsByGame,
             'selectedStatsModal' => $this->selectedStatsModal($recommendationsByGame),
             'rowCountOptions' => [1, 2, 3, 4, 5, 6, 8, 10],
+            'rowCountSelectOptions' => $this->rowCountSelectOptions(),
             'statsLimitOptions' => [10, 12, 20, 30, 40, 50],
+            'statsLimitSelectOptions' => $this->statsLimitSelectOptions(),
         ])->layout('layouts.master');
     }
 
@@ -84,5 +87,47 @@ class RecommendationsPage extends Component
             'subtitle' => $recommendation['label'].' - '.$recommendation['method_label'],
             'stats' => $isBonus ? $recommendation['bonus_stats'] : $recommendation['main_stats'],
         ];
+    }
+
+    protected function methodSelectOptions(array $methodLabels): array
+    {
+        $icons = [
+            LotteryRecommendationService::METHOD_BALANCED => 'mdi mdi-scale-balance',
+            LotteryRecommendationService::METHOD_OVERDUE => 'mdi mdi-clock-alert-outline',
+            LotteryRecommendationService::METHOD_HOT => 'mdi mdi-fire',
+            LotteryRecommendationService::METHOD_RECENT => 'mdi mdi-history',
+            LotteryRecommendationService::METHOD_RARE => 'mdi mdi-chart-scatter-plot',
+        ];
+
+        return collect($methodLabels)
+            ->map(fn (string $label, string $value): array => [
+                'value' => $value,
+                'label' => $label,
+                'icon' => $icons[$value] ?? 'mdi mdi-chart-bell-curve-cumulative',
+            ])
+            ->values()
+            ->all();
+    }
+
+    protected function rowCountSelectOptions(): array
+    {
+        return collect([1, 2, 3, 4, 5, 6, 8, 10])
+            ->map(fn (int $count): array => [
+                'value' => $count,
+                'label' => $count.' Felder',
+                'icon' => 'mdi mdi-view-grid-outline',
+            ])
+            ->all();
+    }
+
+    protected function statsLimitSelectOptions(): array
+    {
+        return collect([10, 12, 20, 30, 40, 50])
+            ->map(fn (int $count): array => [
+                'value' => $count,
+                'label' => 'Top '.$count,
+                'icon' => 'mdi mdi-format-list-numbered',
+            ])
+            ->all();
     }
 }
