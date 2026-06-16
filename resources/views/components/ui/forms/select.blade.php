@@ -29,38 +29,38 @@
 
     <div class="{{ $label ? 'mt-1' : '' }} relative">
         @if($options !== [])
-            <div x-data="{ open: false }" class="relative">
-                <button
-                    id="{{ $inputId }}"
-                    type="button"
-                    x-on:click="open = !open"
-                    x-on:keydown.escape.window="open = false"
-                    @if($disabled) disabled @endif
-                    title="{{ $title }}"
-                    class="flex h-10 w-full items-center justify-between gap-2 rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
-                >
-                    <span class="flex min-w-0 items-center gap-2">
-                        @if($selectedOption && ($selectedOption['icon'] ?? null))
-                            <i class="{{ $selectedOption['icon'] }} shrink-0 text-lg text-gray-500"></i>
-                        @elseif($hasIcon)
-                            <span class="shrink-0 text-gray-500">{{ $icon }}</span>
-                        @endif
+            <x-ui.dropdown.anchor-dropdown
+                align="right"
+                width="auto"
+                :offset="8"
+                :match-trigger-width="true"
+                dropdownClasses="mx-0"
+                contentClasses="max-h-72 overflow-y-auto py-1 bg-white"
+            >
+                <x-slot name="trigger">
+                    <button
+                        id="{{ $inputId }}"
+                        type="button"
+                        @if($disabled) disabled @endif
+                        title="{{ $title }}"
+                        class="flex h-10 w-full items-center justify-between gap-2 rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
+                    >
+                        <span class="flex min-w-0 items-center gap-2">
+                            @if($selectedOption && ($selectedOption['icon'] ?? null))
+                                <i class="{{ $selectedOption['icon'] }} shrink-0 text-lg text-gray-500"></i>
+                            @elseif($hasIcon)
+                                <span class="shrink-0 text-gray-500">{{ $icon }}</span>
+                            @endif
 
-                        <span class="truncate {{ $compactMobile ? 'hidden sm:block' : 'block' }}">
-                            {{ $selectedOption['label'] ?? $title ?? '-' }}
+                            <span class="truncate {{ $compactMobile ? 'hidden sm:block' : 'block' }}">
+                                {{ $selectedOption['label'] ?? $title ?? '-' }}
+                            </span>
                         </span>
-                    </span>
-                    <i class="mdi mdi-chevron-down shrink-0 text-lg text-gray-400"></i>
-                </button>
+                        <i class="mdi mdi-chevron-down shrink-0 text-lg text-gray-400"></i>
+                    </button>
+                </x-slot>
 
-                <div
-                    x-show="open"
-                    x-cloak
-                    x-transition.origin.top
-                    x-on:click.outside="open = false"
-                    class="absolute right-0 z-40 mt-2 max-h-72 min-w-full overflow-y-auto rounded-md border border-gray-200 bg-white py-1 shadow-lg"
-                    style="display: none;"
-                >
+                <x-slot name="content">
                     @foreach($options as $option)
                         @php
                             $isSelected = (string) ($option['value'] ?? '') === (string) $value;
@@ -80,8 +80,8 @@
                             @endif
                         </button>
                     @endforeach
-                </div>
-            </div>
+                </x-slot>
+            </x-ui.dropdown.anchor-dropdown>
         @else
             @if($hasIcon)
                 <div class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-500">
