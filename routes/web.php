@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Livewire\AdminDashboard;
 use App\Livewire\Admin\Config\SettingsPage;
 use App\Livewire\Admin\HistoryPage;
+use App\Livewire\Admin\NumberCheckPage;
 use App\Livewire\Admin\RecommendationsPage;
 
 /*
@@ -25,5 +26,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session')])->group(fun
         Route::get('/einstellungen', SettingsPage::class)->name('admin.settings');
         Route::get('/historie', HistoryPage::class)->name('admin.history');
         Route::get('/empfehlungen', RecommendationsPage::class)->name('admin.recommendations');
+        Route::get('/zahlencheck', NumberCheckPage::class)->name('admin.number-check');
     });
 });

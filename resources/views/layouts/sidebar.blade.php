@@ -34,6 +34,13 @@
                         <span>Empfehlungen</span>
                     </a>
                 </li>
+
+                <li>
+                    <a href="{{ route('admin.number-check') }}" class="block py-2.5 px-6 text-sm font-medium transition-all duration-150 ease-linear {{ request()->routeIs('admin.number-check') ? 'text-blue-600' : 'text-gray-600 hover:text-blue-500' }}">
+                        <i data-feather="check-circle" fill="#545a6d33"></i>
+                        <span>Zahlencheck</span>
+                    </a>
+                </li>
             </ul>
         </div>
     </div>

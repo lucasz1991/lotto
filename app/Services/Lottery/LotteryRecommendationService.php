@@ -122,6 +122,66 @@ class LotteryRecommendationService
         ];
     }
 
+    public function analyzeCombination(string $game, array $mainNumbers, array $bonusNumbers): array
+    {
+        $config = $this->gameConfig($game);
+        $draws = LotteryDraw::query()
+            ->where('game', $game)
+            ->orderByDesc('draw_date')
+            ->get(['draw_date', 'numbers', 'bonus_numbers']);
+
+        if ($draws->isEmpty()) {
+            return [
+                'score' => 0,
+                'rating' => 'Keine Daten',
+                'draw_count' => 0,
+                'main_stats' => [],
+                'bonus_stats' => [],
+                'history' => null,
+            ];
+        }
+
+        $mainStats = $this->scoreNumbers(
+            $draws,
+            $config['main_range'],
+            $config['main_pick_count'],
+            fn (LotteryDraw $draw): array => $draw->numbers ?? [],
+            self::METHOD_BALANCED,
+        );
+        $bonusStats = $this->scoreNumbers(
+            $draws,
+            $config['bonus_range'],
+            $config['bonus_pick_count'],
+            fn (LotteryDraw $draw): array => $this->extractBonusNumbers($draw, $config['bonus_key']),
+            self::METHOD_BALANCED,
+        );
+
+        $mainByNumber = collect($mainStats)->keyBy('number');
+        $bonusByNumber = collect($bonusStats)->keyBy('number');
+        $mainRanks = collect($mainStats)->pluck('number')->flip();
+        $bonusRanks = collect($bonusStats)->pluck('number')->flip();
+
+        $mainScore = $this->averageRankScore($mainNumbers, $mainRanks, count($config['main_range']));
+        $bonusScore = $this->averageRankScore($bonusNumbers, $bonusRanks, count($config['bonus_range']));
+        $score = (int) round(($mainScore * 0.8) + ($bonusScore * 0.2));
+
+        return [
+            'score' => $score,
+            'rating' => $this->scoreRating($score),
+            'draw_count' => $draws->count(),
+            'latest_draw_date' => $draws->first()?->draw_date?->toDateString(),
+            'main_stats' => collect($mainNumbers)
+                ->map(fn (int $number): array => $mainByNumber->get($number, ['number' => $number]))
+                ->values()
+                ->all(),
+            'bonus_stats' => collect($bonusNumbers)
+                ->map(fn (int $number): array => $bonusByNumber->get($number, ['number' => $number]))
+                ->values()
+                ->all(),
+            'history' => $this->combinationHistory($draws, $mainNumbers, $bonusNumbers, $config['bonus_key']),
+        ];
+    }
+
     protected function buildForGame(
         string $game,
         array $mainRange,
@@ -191,6 +251,76 @@ class LotteryRecommendationService
             'reuse_strategy_label' => $this->reuseStrategyLabels()[$reuseStrategy],
             'confidence' => $this->confidenceLabel($draws->count()),
         ];
+    }
+
+    protected function gameConfig(string $game): array
+    {
+        return match ($game) {
+            LotteryDraw::GAME_EUROJACKPOT => [
+                'main_range' => range(1, 50),
+                'main_pick_count' => 5,
+                'bonus_range' => range(1, 12),
+                'bonus_pick_count' => 2,
+                'bonus_key' => 'euro_numbers',
+            ],
+            default => [
+                'main_range' => range(1, 49),
+                'main_pick_count' => 6,
+                'bonus_range' => range(0, 9),
+                'bonus_pick_count' => 1,
+                'bonus_key' => 'superzahl',
+            ],
+        };
+    }
+
+    protected function averageRankScore(array $numbers, Collection $ranks, int $rangeCount): float
+    {
+        if ($numbers === [] || $rangeCount <= 1) {
+            return 0;
+        }
+
+        return collect($numbers)
+            ->map(function (int $number) use ($ranks, $rangeCount): float {
+                $rank = (int) ($ranks->get($number, $rangeCount - 1));
+
+                return max(0, 100 - (($rank / ($rangeCount - 1)) * 100));
+            })
+            ->average() ?? 0;
+    }
+
+    protected function scoreRating(int $score): string
+    {
+        return match (true) {
+            $score >= 75 => 'Sehr stark',
+            $score >= 60 => 'Stark',
+            $score >= 45 => 'Mittel',
+            $score > 0 => 'Schwach',
+            default => 'Keine Daten',
+        };
+    }
+
+    protected function combinationHistory(Collection $draws, array $mainNumbers, array $bonusNumbers, string $bonusKey): array
+    {
+        $best = [
+            'main_hits' => 0,
+            'bonus_hits' => 0,
+            'draw_date' => null,
+        ];
+
+        foreach ($draws as $draw) {
+            $mainHits = count(array_intersect($mainNumbers, $draw->numbers ?? []));
+            $bonusHits = count(array_intersect($bonusNumbers, $this->extractBonusNumbers($draw, $bonusKey)));
+
+            if ($mainHits > $best['main_hits'] || ($mainHits === $best['main_hits'] && $bonusHits > $best['bonus_hits'])) {
+                $best = [
+                    'main_hits' => $mainHits,
+                    'bonus_hits' => $bonusHits,
+                    'draw_date' => $draw->draw_date?->toDateString(),
+                ];
+            }
+        }
+
+        return $best;
     }
 
     protected function scoreNumbers(Collection $draws, array $range, int $pickCount, callable $numberExtractor, string $method): array

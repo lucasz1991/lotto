@@ -22,5 +22,6 @@ class AdminPagesTest extends TestCase
         $this->get(route('admin.settings'))->assertOk();
         $this->get(route('admin.history'))->assertOk();
         $this->get(route('admin.recommendations'))->assertOk();
+        $this->get(route('admin.number-check'))->assertOk();
     }
 }
