@@ -70,30 +70,38 @@
 
                         </div>
 
-                        <div class="grid grid-cols-3 gap-2 xl:min-w-[640px]">
-                            <x-ui.forms.select
-                                model="gameOptions.{{ $game }}.method"
-                                :value="$gameOptions[$game]['method']"
-                                :options="$methodSelectOptions"
-                                title="Auswertungsart"
-                                compact-mobile
-                            />
+                        <div class="flex gap-2 xl:min-w-[520px]">
+                            <div class="min-w-0 flex-1">
+                                <x-ui.forms.select
+                                    model="gameOptions.{{ $game }}.method"
+                                    :value="$gameOptions[$game]['method']"
+                                    :options="$methodSelectOptions"
+                                    title="Auswertungsart"
+                                    compact-mobile
+                                />
+                            </div>
 
-                            <x-ui.forms.select
-                                model="gameOptions.{{ $game }}.row_count"
-                                :value="$gameOptions[$game]['row_count']"
-                                :options="$rowCountSelectOptions"
-                                title="Anzahl Felder"
-                                compact-mobile
-                            />
+                            <div class="w-20 shrink-0 sm:w-24">
+                                <x-ui.forms.select
+                                    model="gameOptions.{{ $game }}.row_count"
+                                    :value="$gameOptions[$game]['row_count']"
+                                    :options="$rowCountSelectOptions"
+                                    title="{{ $gameOptions[$game]['row_count'] }} Felder"
+                                    compact-mobile
+                                />
+                            </div>
 
-                            <x-ui.forms.select
-                                model="gameOptions.{{ $game }}.reuse_strategy"
-                                :value="$gameOptions[$game]['reuse_strategy']"
-                                :options="$reuseStrategySelectOptions"
-                                title="Zahlenverteilung"
-                                compact-mobile
-                            />
+                            @if ((int) $gameOptions[$game]['row_count'] > 1)
+                                <div class="min-w-0 flex-1">
+                                    <x-ui.forms.select
+                                        model="gameOptions.{{ $game }}.reuse_strategy"
+                                        :value="$gameOptions[$game]['reuse_strategy']"
+                                        :options="$reuseStrategySelectOptions"
+                                        title="Zahlenverteilung"
+                                        compact-mobile
+                                    />
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>

@@ -118,7 +118,7 @@ class RecommendationsPage extends Component
         return collect([1, 2, 3, 4, 5, 6, 8, 10])
             ->map(fn (int $count): array => [
                 'value' => $count,
-                'label' => $count.' Felder',
+                'label' => (string) $count,
                 'icon' => 'mdi mdi-view-grid-outline',
             ])
             ->all();
