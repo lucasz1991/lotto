@@ -63,6 +63,10 @@
             text-gray-900 bg-white hover:bg-gray-100
             border-gray-300 focus:ring-gray-200
         ',
+        'close' => '
+            text-gray-500 bg-transparent hover:bg-gray-100
+            border-transparent focus:ring-gray-200
+        ',
     };
 
     $sizeClasses = match ($size) {
