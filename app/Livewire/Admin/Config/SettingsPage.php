@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Config;
 
 use App\Jobs\ScrapeLotteryDraw;
+use App\Jobs\ScrapeLotteryHistoricalYear;
 use App\Models\LotteryDraw;
 use App\Models\LotteryImport;
 use App\Models\Setting;
@@ -10,6 +11,7 @@ use App\Services\Lottery\LotteryCsvImportService;
 use App\Services\Lottery\LotteryDrawScrapingService;
 use App\Services\Lottery\LotteryScrapingSchedule;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Throwable;
@@ -36,9 +38,22 @@ class SettingsPage extends Component
 
     public array $scrapingScheduleWeekdays = LotteryScrapingSchedule::DEFAULT_WEEKDAYS;
 
+    public bool $historicalScrapeModalOpen = false;
+
+    public int $historicalScrapeYear;
+
+    public array $historicalScrapeGames = [];
+
+    public array $historicalYearOptions = [];
+
+    public ?array $lastHistoricalScrapeDispatch = null;
+
     public function mount(): void
     {
         $this->loadGameSettings(app(LotteryScrapingSchedule::class));
+        $this->historicalScrapeYear = (int) now()->year;
+        $this->historicalScrapeGames = array_keys(LotteryDraw::gameLabels());
+        $this->historicalYearOptions = $this->fallbackHistoricalYearOptions();
     }
 
     public function switchTab(string $tab): void
@@ -112,6 +127,48 @@ class SettingsPage extends Component
         }
     }
 
+    public function openHistoricalScrapeModal(): void
+    {
+        $this->resetErrorBag();
+        $this->loadHistoricalYearOptions();
+        $this->historicalScrapeModalOpen = true;
+    }
+
+    public function closeHistoricalScrapeModal(): void
+    {
+        $this->historicalScrapeModalOpen = false;
+    }
+
+    public function startHistoricalYearScrape(): void
+    {
+        $this->persistGameSettings();
+
+        $validated = $this->validate([
+            'historicalScrapeYear' => ['required', 'integer', 'min:1955', 'max:'.now()->year],
+            'historicalScrapeGames' => ['required', 'array', 'min:1'],
+            'historicalScrapeGames.*' => ['required', Rule::in(array_keys(LotteryDraw::gameLabels()))],
+        ]);
+
+        $games = array_values(array_unique($validated['historicalScrapeGames']));
+        $urls = collect($games)
+            ->mapWithKeys(fn (string $game): array => [$game => trim($this->scrapingUrlFor($game))])
+            ->all();
+
+        ScrapeLotteryHistoricalYear::dispatch((int) $validated['historicalScrapeYear'], $games, $urls);
+
+        $this->lastHistoricalScrapeDispatch = [
+            'year' => (int) $validated['historicalScrapeYear'],
+            'games' => collect($games)
+                ->map(fn (string $game): string => LotteryDraw::gameLabels()[$game] ?? $game)
+                ->values()
+                ->all(),
+            'started_at' => now()->format('d.m.Y H:i:s'),
+        ];
+        $this->historicalScrapeModalOpen = false;
+
+        session()->flash('success', 'Historischer Jahres-Scan wurde als Job gestartet.');
+    }
+
     public function importCsv(LotteryCsvImportService $importer): void
     {
         $validated = $this->validate([
@@ -151,8 +208,27 @@ class SettingsPage extends Component
             'drawCount' => LotteryDraw::query()->count(),
             'latestImports' => LotteryImport::query()->latest()->limit(8)->get(),
             'gameLabels' => LotteryDraw::gameLabels(),
+            'historicalYearOptions' => $this->historicalYearOptions ?: $this->fallbackHistoricalYearOptions(),
             'weekdayLabels' => app(LotteryScrapingSchedule::class)->weekdayLabels(),
         ])->layout('layouts.master');
+    }
+
+    protected function loadHistoricalYearOptions(): void
+    {
+        $scraper = app(LotteryDrawScrapingService::class);
+        $years = collect(array_keys(LotteryDraw::gameLabels()))
+            ->flatMap(fn (string $game): array => $scraper->availableHistoricalYears($game, $this->scrapingUrlFor($game)))
+            ->unique()
+            ->sortDesc()
+            ->values()
+            ->all();
+
+        $this->historicalYearOptions = $years ?: $this->fallbackHistoricalYearOptions();
+    }
+
+    protected function fallbackHistoricalYearOptions(): array
+    {
+        return range((int) now()->year, 1955);
     }
 
     protected function loadGameSettings(LotteryScrapingSchedule $schedule): void

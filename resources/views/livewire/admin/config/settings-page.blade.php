@@ -59,10 +59,23 @@
         @if ($activeTab === 'games')
             <div class="space-y-8 px-6 py-6">
                 <div>
-                    <h2 class="text-lg font-semibold text-gray-900">Spiele & Scraping</h2>
-                    <p class="mt-1 text-sm text-gray-500">
-                        Hinterlege pro Spielart eine URL, aus der die aktuell gezogenen Zahlen ausgelesen werden sollen.
-                    </p>
+                    <div class="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-900">Spiele & Scraping</h2>
+                            <p class="mt-1 text-sm text-gray-500">
+                                Hinterlege pro Spielart eine URL, aus der die aktuell gezogenen Zahlen ausgelesen werden sollen.
+                            </p>
+                        </div>
+
+                        <button
+                            type="button"
+                            wire:click="openHistoricalScrapeModal"
+                            class="inline-flex items-center justify-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-100"
+                        >
+                            <i class="mdi mdi-database-clock-outline text-lg"></i>
+                            Historie scannen
+                        </button>
+                    </div>
                 </div>
 
                 <div class="rounded-lg border border-gray-200 bg-gray-50 p-5">
@@ -224,6 +237,22 @@
                     </div>
                 @endif
 
+                @if ($lastHistoricalScrapeDispatch)
+                    <div class="rounded-lg border border-indigo-200 bg-indigo-50 p-5">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <h3 class="text-base font-semibold text-indigo-950">Historischer Scan gestartet</h3>
+                                <p class="mt-1 text-sm text-indigo-800">
+                                    Jahr {{ $lastHistoricalScrapeDispatch['year'] }} fuer {{ implode(', ', $lastHistoricalScrapeDispatch['games']) }}.
+                                </p>
+                            </div>
+                            <span class="rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-900">
+                                {{ $lastHistoricalScrapeDispatch['started_at'] }}
+                            </span>
+                        </div>
+                    </div>
+                @endif
+
                 <div class="rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
                     Lotto.de-URLs werden automatisch ueber die internen JSON-Endpunkte von Lotto.de verarbeitet. Andere Seiten werden weiterhin ueber erkennbare Texte wie <strong>Gewinnzahlen</strong>, <strong>Superzahl</strong> oder <strong>Eurozahlen</strong> geparst.
                 </div>
@@ -346,4 +375,79 @@
             </div>
         @endif
     </div>
+
+    <x-dialog-modal wire:model.live="historicalScrapeModalOpen" maxWidth="2xl">
+        <x-slot name="title">
+            Historische Jahresdaten scannen
+        </x-slot>
+
+        <x-slot name="content">
+            <div class="space-y-5">
+                <p class="text-sm text-gray-500">
+                    Der Job liest fuer das ausgewaehlte Jahr zuerst die verfuegbaren Ziehungstage aus und speichert danach jede Ziehung einzeln. Bestehende Eintraege werden pro Spielart und Datum aktualisiert.
+                </p>
+
+                <label class="block">
+                    <span class="text-sm font-semibold text-gray-700">Jahr</span>
+                    <select
+                        wire:model.defer="historicalScrapeYear"
+                        class="mt-2 block w-full rounded-md border border-gray-300 bg-white p-3 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    >
+                        @foreach ($historicalYearOptions as $year)
+                            <option value="{{ $year }}">{{ $year }}</option>
+                        @endforeach
+                    </select>
+                    @error('historicalScrapeYear') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                </label>
+
+                <div>
+                    <p class="text-sm font-semibold text-gray-700">Spiele</p>
+                    <div class="mt-2 grid gap-2 sm:grid-cols-2">
+                        @foreach ($gameLabels as $game => $label)
+                            <label class="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm">
+                                <input
+                                    type="checkbox"
+                                    value="{{ $game }}"
+                                    wire:model.defer="historicalScrapeGames"
+                                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500"
+                                >
+                                {{ $label }}
+                            </label>
+                        @endforeach
+                    </div>
+                    @error('historicalScrapeGames') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                    @error('historicalScrapeGames.*') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                    Die Jahresauswahl wird aus den Lotto.de-Selectfeldern gelesen. Fuer die Tagesauswahl nutzt der Job die dazugehoerigen Lotto.de-History-Daten und speichert jede Ziehung einzeln.
+                </div>
+            </div>
+        </x-slot>
+
+        <x-slot name="footer">
+            <div class="flex flex-wrap justify-end gap-3">
+                <x-buttons.button-basic
+                    type="button"
+                    wire:click="closeHistoricalScrapeModal"
+                    mode="close"
+                    size="sm"
+                >
+                    Abbrechen
+                </x-buttons.button-basic>
+
+                <x-buttons.button-basic
+                    type="button"
+                    wire:click="startHistoricalYearScrape"
+                    wire:loading.attr="disabled"
+                    wire:target="startHistoricalYearScrape"
+                    mode="submit"
+                    size="sm"
+                >
+                    <span wire:loading.remove wire:target="startHistoricalYearScrape">Job starten</span>
+                    <span wire:loading wire:target="startHistoricalYearScrape">Starte...</span>
+                </x-buttons.button-basic>
+            </div>
+        </x-slot>
+    </x-dialog-modal>
 </div>

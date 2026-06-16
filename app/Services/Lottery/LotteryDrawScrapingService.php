@@ -47,6 +47,147 @@ class LotteryDrawScrapingService
         return $this->storeParsedDraw($game, $url, $response->body());
     }
 
+    public function scrapeHistoricalYear(string $game, int $year, ?string $url = null): array
+    {
+        if (! array_key_exists($game, LotteryDraw::gameLabels())) {
+            throw new InvalidArgumentException('Unbekannte Spielart.');
+        }
+
+        $url = trim((string) ($url ?: $this->configuredUrl($game)));
+
+        if ($url === '') {
+            throw new InvalidArgumentException('Keine Scraping-URL fuer diese Spielart hinterlegt.');
+        }
+
+        if (! $this->isLottoDePageUrl($url)) {
+            throw new InvalidArgumentException('Historische Jahres-Scans sind aktuell nur fuer Lotto.de-URLs verfuegbar.');
+        }
+
+        $availableYears = $this->availableHistoricalYears($game, $url);
+
+        if ($availableYears !== [] && ! in_array($year, $availableYears, true)) {
+            throw new InvalidArgumentException('Das Jahr ist im Lotto.de-Jahresselect fuer diese Spielart nicht vorhanden.');
+        }
+
+        $dateOptions = $this->availableHistoricalDatesForYear($game, $year, $url);
+        $historyUrl = $dateOptions['source_url'];
+        $dates = collect($dateOptions['dates']);
+
+        $summary = [
+            'game' => $game,
+            'year' => $year,
+            'total' => $dates->count(),
+            'stored' => 0,
+            'failed' => 0,
+            'failed_dates' => [],
+            'history_url' => $historyUrl,
+        ];
+
+        foreach ($dates as $date) {
+            try {
+                $drawUrl = $this->lottoDeApiUrl($url, $this->lottoDeDrawApiPath($game).'/'.$this->lottoDeDateTimestamp($date));
+                $payload = $this->fetchJson($drawUrl);
+                $drawPayload = $game === LotteryDraw::GAME_LOTTO_6AUS49 && array_is_list($payload)
+                    ? ($payload[0] ?? [])
+                    : $payload;
+
+                $this->storeParsedData(
+                    $game,
+                    $drawUrl,
+                    match ($game) {
+                        LotteryDraw::GAME_LOTTO_6AUS49 => $this->parseLottoDeLotto6Aus49Payload($drawPayload),
+                        LotteryDraw::GAME_EUROJACKPOT => $this->parseLottoDeEuroJackpotPayload($drawPayload),
+                        default => throw new InvalidArgumentException('Unbekannte Spielart.'),
+                    },
+                    [
+                        'source' => 'lotto.de-history-api',
+                        'history_url' => $historyUrl,
+                        'api_urls' => [$drawUrl],
+                        'payload' => $payload,
+                    ],
+                );
+
+                $summary['stored']++;
+                usleep(150000);
+            } catch (Throwable $exception) {
+                $summary['failed']++;
+                $summary['failed_dates'][] = [
+                    'date' => $date,
+                    'error' => $exception->getMessage(),
+                ];
+            }
+        }
+
+        return $summary;
+    }
+
+    public function scrapeHistoricalYearForGames(int $year, array $games, array $urls = []): array
+    {
+        $summaries = [];
+
+        foreach ($games as $game) {
+            try {
+                $summaries[$game] = $this->scrapeHistoricalYear($game, $year, $urls[$game] ?? null);
+            } catch (Throwable $exception) {
+                $summaries[$game] = [
+                    'game' => $game,
+                    'year' => $year,
+                    'total' => 0,
+                    'stored' => 0,
+                    'failed' => 1,
+                    'failed_dates' => [
+                        [
+                            'date' => null,
+                            'error' => $exception->getMessage(),
+                        ],
+                    ],
+                    'history_url' => null,
+                ];
+            }
+        }
+
+        return $summaries;
+    }
+
+    public function availableHistoricalYears(string $game, ?string $url = null): array
+    {
+        $url = trim((string) ($url ?: $this->configuredUrl($game)));
+
+        if ($url === '' || ! $this->isLottoDePageUrl($url)) {
+            return [];
+        }
+
+        try {
+            $response = $this->fetchHtml($url);
+
+            return $this->parseLottoDeDateInputOptions($response)['years'];
+        } catch (Throwable) {
+            return [];
+        }
+    }
+
+    public function availableHistoricalDatesForYear(string $game, int $year, ?string $url = null): array
+    {
+        $url = trim((string) ($url ?: $this->configuredUrl($game)));
+
+        if ($url === '' || ! $this->isLottoDePageUrl($url)) {
+            throw new InvalidArgumentException('Historische Jahres-Scans sind aktuell nur fuer Lotto.de-URLs verfuegbar.');
+        }
+
+        $historyUrl = $this->lottoDeApiUrl($url, $this->lottoDeHistoryApiPath($game).'/'.$this->lottoDeYearTimestamp($year));
+        $history = $this->fetchJson($historyUrl);
+
+        return [
+            'source_url' => $historyUrl,
+            'dates' => collect($history['days'] ?? [])
+                ->pluck('date')
+                ->filter(fn (mixed $date): bool => is_string($date) && str_starts_with($date, (string) $year.'-'))
+                ->unique()
+                ->values()
+                ->all(),
+        ];
+    }
+
     protected function scrapeLottoDeGame(string $game, string $sourceUrl): LotteryDraw
     {
         try {
@@ -229,6 +370,65 @@ class LotteryDrawScrapingService
         return $json;
     }
 
+    protected function fetchHtml(string $url): string
+    {
+        $response = Http::timeout(30)
+            ->retry(2, 500)
+            ->withHeaders([
+                'User-Agent' => 'LottoAdmin/1.0 (+'.config('app.url').')',
+                'Accept' => 'text/html,application/xhtml+xml,application/xml,text/plain;q=0.9,*/*;q=0.8',
+            ])
+            ->get($url);
+
+        $response->throw();
+
+        return $response->body();
+    }
+
+    protected function parseLottoDeDateInputOptions(string $content): array
+    {
+        if (! str_contains($content, 'OddsDateInput')) {
+            return ['years' => [], 'dates' => []];
+        }
+
+        $xpath = $this->xpathForHtml($content);
+        $dateInput = $this->firstElement($xpath, '//*[contains(concat(" ", normalize-space(@class), " "), " OddsDateInput ")]');
+
+        if (! $dateInput) {
+            return ['years' => [], 'dates' => []];
+        }
+
+        $years = [];
+        $dates = [];
+
+        foreach ($xpath->query('.//select', $dateInput) ?: [] as $select) {
+            if (! $select instanceof DOMElement) {
+                continue;
+            }
+
+            $label = mb_strtolower($select->getAttribute('aria-label').' '.$select->getAttribute('name').' '.$select->getAttribute('id'));
+
+            foreach ($xpath->query('.//option', $select) ?: [] as $option) {
+                if (! $option instanceof DOMElement) {
+                    continue;
+                }
+
+                $value = $this->clean($option->getAttribute('value'));
+
+                if (str_contains($label, 'jahr') || preg_match('/^\d{4}$/', $value) === 1) {
+                    $years[] = (int) $value;
+                } elseif (str_contains($label, 'datum') || preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1) {
+                    $dates[] = $value;
+                }
+            }
+        }
+
+        return [
+            'years' => collect($years)->filter()->unique()->sortDesc()->values()->all(),
+            'dates' => collect($dates)->filter()->unique()->values()->all(),
+        ];
+    }
+
     protected function parseLottoDeLotto6Aus49Payload(array $payload): array
     {
         $numbers = collect($payload['drawNumbersCollection'] ?? [])
@@ -247,7 +447,11 @@ class LotteryDrawScrapingService
             'numbers' => $numbers,
             'bonus_numbers' => [
                 'superzahl' => array_key_exists('superNumber', $payload) ? (int) $payload['superNumber'] : null,
+                'spiel77' => $payload['game77']['numbers'] ?? null,
+                'super6' => $payload['super6']['numbers'] ?? null,
             ],
+            'stake_cents' => $this->numericMoneyToCents($payload['gameAmount'] ?? null),
+            'prize_classes' => $this->parseApiOddsCollection($payload['oddsCollection'] ?? []),
         ];
     }
 
@@ -279,6 +483,8 @@ class LotteryDrawScrapingService
             'bonus_numbers' => [
                 'euro_numbers' => $euroNumbers,
             ],
+            'stake_cents' => $this->numericMoneyToCents($payload['gameAmount'] ?? null),
+            'prize_classes' => $this->parseApiOddsCollection($payload['oddsCollection'] ?? []),
         ];
     }
 
@@ -289,6 +495,48 @@ class LotteryDrawScrapingService
         }
 
         return CarbonImmutable::createFromTimestampMs((int) $timestamp)->setTimezone(config('app.timezone'))->startOfDay();
+    }
+
+    protected function lottoDeHistoryApiPath(string $game): string
+    {
+        return match ($game) {
+            LotteryDraw::GAME_LOTTO_6AUS49 => '/api/stats/entities.lotto/history',
+            LotteryDraw::GAME_EUROJACKPOT => '/api/stats/entities.eurojackpot/history',
+            default => throw new InvalidArgumentException('Unbekannte Spielart.'),
+        };
+    }
+
+    protected function lottoDeDrawApiPath(string $game): string
+    {
+        return match ($game) {
+            LotteryDraw::GAME_LOTTO_6AUS49 => '/api/stats/entities.lotto/draws',
+            LotteryDraw::GAME_EUROJACKPOT => '/api/stats/entities.eurojackpot/draw',
+            default => throw new InvalidArgumentException('Unbekannte Spielart.'),
+        };
+    }
+
+    protected function lottoDeYearTimestamp(int $year): int
+    {
+        return (CarbonImmutable::create($year + 1, 1, 1, 0, 0, 0, config('app.timezone'))->getTimestamp() * 1000) - 10000000;
+    }
+
+    protected function lottoDeDateTimestamp(string $date): int
+    {
+        return CarbonImmutable::parse($date, config('app.timezone'))->startOfDay()->getTimestamp() * 1000;
+    }
+
+    protected function parseApiOddsCollection(array $oddsCollection): array
+    {
+        return collect($oddsCollection)
+            ->map(fn (array $row): array => [
+                'class' => $this->parseIntOrNull($row['winningClass'] ?? null),
+                'match' => $row['winningClassDescription']['winningClassName'] ?? null,
+                'winners' => $this->parseIntOrNull($row['numberOfWinners'] ?? null),
+                'quote_cents' => $this->numericMoneyToCents($row['odds'] ?? null),
+                'jackpot' => (bool) (($row['jackpot'] ?? null) && ! ($row['numberOfWinners'] ?? null)),
+            ])
+            ->values()
+            ->all();
     }
 
     protected function parseLottoDePageHtml(string $game, string $content): ?array
@@ -613,6 +861,11 @@ class LotteryDrawScrapingService
         }
 
         return (int) round(((float) $normalized) * 100);
+    }
+
+    protected function numericMoneyToCents(mixed $value): ?int
+    {
+        return is_numeric($value) ? (int) round(((float) $value) * 100) : null;
     }
 
     protected function clean(mixed $value): string

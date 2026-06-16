@@ -3,12 +3,14 @@
 namespace Tests\Feature;
 
 use App\Jobs\ScrapeLotteryDraw;
+use App\Jobs\ScrapeLotteryHistoricalYear;
 use App\Livewire\Admin\Config\SettingsPage;
 use App\Models\LotteryDraw;
 use App\Models\Setting;
 use App\Services\Lottery\LotteryDrawScrapingService;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -293,8 +295,105 @@ HTML),
         ]);
     }
 
+    public function test_lotto_de_historical_year_scrape_uses_select_years_and_stores_draws(): void
+    {
+        $historyTimestamp = $this->lottoDeYearHistoryTimestamp(2026);
+        $drawTimestamp = $this->lottoDeTimestamp('2026-06-13');
+
+        Http::fake([
+            'https://www.lotto.de/lotto-6aus49/lottozahlen' => Http::response(<<<'HTML'
+<div class="OddsDateInput">
+    <select aria-label="Datum auswählen"><option value="2026-06-13">13.06. (Samstag)</option></select>
+    <select aria-label="Jahr auswählen"><option value="2026">2026</option><option value="2025">2025</option></select>
+</div>
+HTML),
+            'https://www.lotto.de/api/stats/entities.lotto/history/'.$historyTimestamp => Http::response([
+                'days' => [
+                    ['date' => '2026-06-13', 'key' => '13.06.2026'],
+                ],
+                'years' => [
+                    ['year' => 2026],
+                    ['year' => 2025],
+                ],
+            ]),
+            'https://www.lotto.de/api/stats/entities.lotto/draws/'.$drawTimestamp => Http::response([[
+                'drawDate' => $drawTimestamp,
+                'drawNumbersCollection' => [
+                    ['drawNumber' => 16, 'index' => 1],
+                    ['drawNumber' => 13, 'index' => 2],
+                    ['drawNumber' => 4, 'index' => 3],
+                    ['drawNumber' => 20, 'index' => 4],
+                    ['drawNumber' => 24, 'index' => 5],
+                    ['drawNumber' => 43, 'index' => 6],
+                ],
+                'superNumber' => 8,
+                'gameAmount' => 53177703.60,
+                'game77' => ['numbers' => '5770232'],
+                'super6' => ['numbers' => '553942'],
+                'oddsCollection' => [
+                    [
+                        'winningClass' => 2,
+                        'numberOfWinners' => 1,
+                        'odds' => 2854924.20,
+                        'winningClassDescription' => ['winningClassName' => '6 Richtige'],
+                    ],
+                ],
+            ]]),
+        ]);
+
+        $summary = app(LotteryDrawScrapingService::class)->scrapeHistoricalYear(
+            LotteryDraw::GAME_LOTTO_6AUS49,
+            2026,
+            'https://www.lotto.de/lotto-6aus49/lottozahlen',
+        );
+
+        $this->assertSame(1, $summary['total']);
+        $this->assertSame(1, $summary['stored']);
+        $this->assertSame(0, $summary['failed']);
+
+        $draw = LotteryDraw::query()->where('game', LotteryDraw::GAME_LOTTO_6AUS49)->firstOrFail();
+
+        $this->assertSame('2026-06-13', $draw->draw_date->toDateString());
+        $this->assertSame([16, 13, 4, 20, 24, 43], $draw->numbers);
+        $this->assertSame(8, $draw->bonus_numbers['superzahl']);
+        $this->assertSame('5770232', $draw->bonus_numbers['spiel77']);
+        $this->assertSame(5317770360, $draw->stake_cents);
+        $this->assertSame(285492420, $draw->prize_classes[0]['quote_cents']);
+        $this->assertSame('lotto.de-history-api', $draw->raw_data['source']);
+    }
+
+    public function test_settings_page_can_open_historical_scrape_modal_and_dispatch_year_job(): void
+    {
+        Bus::fake();
+
+        Http::fake([
+            'https://www.lotto.de/lotto-6aus49/lottozahlen' => Http::response('<div class="OddsDateInput"><select aria-label="Jahr auswählen"><option value="2026">2026</option><option value="2025">2025</option></select></div>'),
+            'https://www.lotto.de/eurojackpot/zahlen' => Http::response('<div class="OddsDateInput"><select aria-label="Jahr auswählen"><option value="2026">2026</option><option value="2024">2024</option></select></div>'),
+        ]);
+
+        Livewire::test(SettingsPage::class)
+            ->set('activeTab', 'games')
+            ->call('openHistoricalScrapeModal')
+            ->assertSet('historicalScrapeModalOpen', true)
+            ->assertSet('historicalYearOptions', [2026, 2025, 2024])
+            ->set('historicalScrapeYear', 2026)
+            ->set('historicalScrapeGames', [LotteryDraw::GAME_LOTTO_6AUS49, LotteryDraw::GAME_EUROJACKPOT])
+            ->call('startHistoricalYearScrape')
+            ->assertHasNoErrors()
+            ->assertSet('historicalScrapeModalOpen', false)
+            ->assertSet('lastHistoricalScrapeDispatch.year', 2026);
+
+        Bus::assertDispatched(ScrapeLotteryHistoricalYear::class, fn (ScrapeLotteryHistoricalYear $job): bool => $job->year === 2026
+            && $job->games === [LotteryDraw::GAME_LOTTO_6AUS49, LotteryDraw::GAME_EUROJACKPOT]);
+    }
+
     private function lottoDeTimestamp(string $date): int
     {
         return CarbonImmutable::parse($date, config('app.timezone'))->startOfDay()->getTimestamp() * 1000;
+    }
+
+    private function lottoDeYearHistoryTimestamp(int $year): int
+    {
+        return (CarbonImmutable::create($year + 1, 1, 1, 0, 0, 0, config('app.timezone'))->getTimestamp() * 1000) - 10000000;
     }
 }

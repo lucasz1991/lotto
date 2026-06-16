@@ -67,6 +67,11 @@
             text-gray-500 bg-transparent hover:bg-gray-100
             border-transparent focus:ring-gray-200
         ',
+        'submit' => '
+            text-white bg-blue-600 hover:bg-blue-700
+            border-blue-700 focus:ring-blue-300
+            active:bg-blue-800 shadow-sm hover:shadow
+        ',
     };
 
     $sizeClasses = match ($size) {
