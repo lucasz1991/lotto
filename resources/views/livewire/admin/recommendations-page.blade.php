@@ -48,7 +48,7 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-2 xl:min-w-[520px]">
+                        <div class="grid grid-cols-3 gap-2 xl:min-w-[640px]">
                             <x-ui.forms.select
                                 model="gameOptions.{{ $game }}.method"
                                 :value="$gameOptions[$game]['method']"
@@ -65,6 +65,13 @@
                                 compact-mobile
                             />
 
+                            <x-ui.forms.select
+                                model="gameOptions.{{ $game }}.reuse_strategy"
+                                :value="$gameOptions[$game]['reuse_strategy']"
+                                :options="$reuseStrategySelectOptions"
+                                title="Zahlenverteilung"
+                                compact-mobile
+                            />
                         </div>
                     </div>
                 </div>

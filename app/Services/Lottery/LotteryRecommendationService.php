@@ -17,11 +17,18 @@ class LotteryRecommendationService
 
     public const METHOD_RARE = 'rare';
 
+    public const REUSE_ALLOW = 'allow';
+
+    public const REUSE_BALANCED = 'balanced';
+
+    public const REUSE_AVOID = 'avoid';
+
     public function recommendations(array $options = []): array
     {
         $method = $this->normalizeMethod($options['method'] ?? self::METHOD_RARE);
         $rowCount = $this->clampInt($options['row_count'] ?? 1, 1, 10);
         $statsLimit = $this->clampInt($options['stats_limit'] ?? 50, 5, 50);
+        $reuseStrategy = $this->normalizeReuseStrategy($options['reuse_strategy'] ?? self::REUSE_AVOID);
 
         return [
             LotteryDraw::GAME_LOTTO_6AUS49 => $this->buildForGame(
@@ -34,6 +41,7 @@ class LotteryRecommendationService
                 method: $method,
                 rowCount: $rowCount,
                 statsLimit: $statsLimit,
+                reuseStrategy: $reuseStrategy,
             ),
             LotteryDraw::GAME_EUROJACKPOT => $this->buildForGame(
                 game: LotteryDraw::GAME_EUROJACKPOT,
@@ -45,6 +53,7 @@ class LotteryRecommendationService
                 method: $method,
                 rowCount: $rowCount,
                 statsLimit: $statsLimit,
+                reuseStrategy: $reuseStrategy,
             ),
         ];
     }
@@ -69,6 +78,7 @@ class LotteryRecommendationService
                     'method' => self::METHOD_RARE,
                     'row_count' => 1,
                     'stats_limit' => 50,
+                    'reuse_strategy' => self::REUSE_AVOID,
                 ],
             ])
             ->all();
@@ -85,6 +95,7 @@ class LotteryRecommendationService
                 'method' => $this->normalizeMethod($options['method'] ?? $defaultOptions['method']),
                 'row_count' => $this->clampInt($options['row_count'] ?? $defaultOptions['row_count'], 1, 10),
                 'stats_limit' => $this->clampInt($options['stats_limit'] ?? $defaultOptions['stats_limit'], 5, 50),
+                'reuse_strategy' => $this->normalizeReuseStrategy($options['reuse_strategy'] ?? $defaultOptions['reuse_strategy']),
             ];
         }
 
@@ -102,6 +113,15 @@ class LotteryRecommendationService
         ];
     }
 
+    public function reuseStrategyLabels(): array
+    {
+        return [
+            self::REUSE_ALLOW => 'Gleiche Zahlen erlauben',
+            self::REUSE_BALANCED => 'Ausgewogen verteilen',
+            self::REUSE_AVOID => 'Gleiche Zahlen vermeiden',
+        ];
+    }
+
     protected function buildForGame(
         string $game,
         array $mainRange,
@@ -112,6 +132,7 @@ class LotteryRecommendationService
         string $method,
         int $rowCount,
         int $statsLimit,
+        string $reuseStrategy,
     ): array {
         $draws = LotteryDraw::query()
             ->where('game', $game)
@@ -131,6 +152,8 @@ class LotteryRecommendationService
                 'bonus_stats' => [],
                 'method' => $method,
                 'method_label' => $this->methodLabels()[$method],
+                'reuse_strategy' => $reuseStrategy,
+                'reuse_strategy_label' => $this->reuseStrategyLabels()[$reuseStrategy],
                 'confidence' => 'Keine Daten',
             ];
         }
@@ -149,7 +172,7 @@ class LotteryRecommendationService
             fn (LotteryDraw $draw): array => $this->extractBonusNumbers($draw, $bonusKey),
             $method,
         );
-        $rows = $this->buildRows($mainStats, $bonusStats, $mainPickCount, $bonusPickCount, $rowCount);
+        $rows = $this->buildRows($mainStats, $bonusStats, $mainPickCount, $bonusPickCount, $rowCount, $reuseStrategy);
         $firstRow = $rows[0] ?? ['main_numbers' => [], 'bonus_numbers' => []];
 
         return [
@@ -164,6 +187,8 @@ class LotteryRecommendationService
             'bonus_stats' => array_slice($bonusStats, 0, min($statsLimit, count($bonusRange))),
             'method' => $method,
             'method_label' => $this->methodLabels()[$method],
+            'reuse_strategy' => $reuseStrategy,
+            'reuse_strategy_label' => $this->reuseStrategyLabels()[$reuseStrategy],
             'confidence' => $this->confidenceLabel($draws->count()),
         ];
     }
@@ -244,14 +269,16 @@ class LotteryRecommendationService
         });
     }
 
-    protected function buildRows(array $mainStats, array $bonusStats, int $mainPickCount, int $bonusPickCount, int $rowCount): array
+    protected function buildRows(array $mainStats, array $bonusStats, int $mainPickCount, int $bonusPickCount, int $rowCount, string $reuseStrategy): array
     {
         $rows = [];
         $seen = [];
+        $usedMainNumbers = [];
+        $usedBonusNumbers = [];
 
         for ($rowIndex = 0; count($rows) < $rowCount && $rowIndex < $rowCount * 3; $rowIndex++) {
-            $mainNumbers = $this->selectNumbersForRow($mainStats, $mainPickCount, $rowIndex);
-            $bonusNumbers = $this->selectNumbersForRow($bonusStats, $bonusPickCount, $rowIndex);
+            $mainNumbers = $this->selectNumbersForRow($mainStats, $mainPickCount, $rowIndex, $reuseStrategy, $usedMainNumbers);
+            $bonusNumbers = $this->selectNumbersForRow($bonusStats, $bonusPickCount, $rowIndex, $reuseStrategy, $usedBonusNumbers);
 
             $row = [
                 'main_numbers' => $mainNumbers,
@@ -266,6 +293,12 @@ class LotteryRecommendationService
             }
 
             $seen[$key] = true;
+            foreach ($mainNumbers as $number) {
+                $usedMainNumbers[$number] = ($usedMainNumbers[$number] ?? 0) + 1;
+            }
+            foreach ($bonusNumbers as $number) {
+                $usedBonusNumbers[$number] = ($usedBonusNumbers[$number] ?? 0) + 1;
+            }
             $rows[] = $row;
         }
 
@@ -283,7 +316,7 @@ class LotteryRecommendationService
             ->all();
     }
 
-    protected function selectNumbersForRow(array $stats, int $pickCount, int $rowIndex): array
+    protected function selectNumbersForRow(array $stats, int $pickCount, int $rowIndex, string $reuseStrategy, array $usedNumbers = []): array
     {
         $rankedNumbers = array_values(array_map(fn (array $stat): int => (int) $stat['number'], $stats));
 
@@ -291,6 +324,22 @@ class LotteryRecommendationService
             sort($rankedNumbers);
 
             return $rankedNumbers;
+        }
+
+        if ($reuseStrategy === self::REUSE_AVOID) {
+            $unusedNumbers = array_values(array_filter(
+                $rankedNumbers,
+                fn (int $number): bool => ! isset($usedNumbers[$number])
+            ));
+
+            if (count($unusedNumbers) >= $pickCount) {
+                $rankedNumbers = $unusedNumbers;
+            }
+        } elseif ($reuseStrategy === self::REUSE_BALANCED && $usedNumbers !== []) {
+            $rankPositions = array_flip($rankedNumbers);
+
+            usort($rankedNumbers, fn (int $left, int $right): int => ($usedNumbers[$left] ?? 0) <=> ($usedNumbers[$right] ?? 0)
+                ?: $rankPositions[$left] <=> $rankPositions[$right]);
         }
 
         $poolSize = min(count($rankedNumbers), max($pickCount, $pickCount + $rowIndex + 4));
@@ -340,6 +389,13 @@ class LotteryRecommendationService
         $method = (string) $method;
 
         return array_key_exists($method, $this->methodLabels()) ? $method : self::METHOD_RARE;
+    }
+
+    protected function normalizeReuseStrategy(mixed $strategy): string
+    {
+        $strategy = (string) $strategy;
+
+        return array_key_exists($strategy, $this->reuseStrategyLabels()) ? $strategy : self::REUSE_AVOID;
     }
 
     protected function clampInt(mixed $value, int $min, int $max): int

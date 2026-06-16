@@ -24,6 +24,7 @@ class RecommendationsPage extends Component
                 'method' => $options['method'],
                 'row_count' => $options['row_count'],
                 'stats_limit' => $options['stats_limit'],
+                'reuse_strategy' => $options['reuse_strategy'],
             ])
             ->all();
         $this->activeMobileGame = array_key_first($this->gameOptions) ?? '';
@@ -40,6 +41,7 @@ class RecommendationsPage extends Component
         return view('livewire.admin.recommendations-page', [
             'methodLabels' => $recommendations->methodLabels(),
             'methodSelectOptions' => $this->methodSelectOptions($recommendations->methodLabels()),
+            'reuseStrategySelectOptions' => $this->reuseStrategySelectOptions($recommendations->reuseStrategyLabels()),
             'recommendations' => $recommendationsByGame,
             'selectedStatsModal' => $this->selectedStatsModal($recommendationsByGame),
             'rowCountOptions' => [1, 2, 3, 4, 5, 6, 8, 10],
@@ -128,6 +130,24 @@ class RecommendationsPage extends Component
                 'label' => 'Top '.$count,
                 'icon' => 'mdi mdi-format-list-numbered',
             ])
+            ->all();
+    }
+
+    protected function reuseStrategySelectOptions(array $strategyLabels): array
+    {
+        $icons = [
+            LotteryRecommendationService::REUSE_ALLOW => 'mdi mdi-repeat',
+            LotteryRecommendationService::REUSE_BALANCED => 'mdi mdi-call-split',
+            LotteryRecommendationService::REUSE_AVOID => 'mdi mdi-set-none',
+        ];
+
+        return collect($strategyLabels)
+            ->map(fn (string $label, string $value): array => [
+                'value' => $value,
+                'label' => $label,
+                'icon' => $icons[$value] ?? 'mdi mdi-repeat-variant',
+            ])
+            ->values()
             ->all();
     }
 }

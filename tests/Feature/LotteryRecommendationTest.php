@@ -72,6 +72,7 @@ class LotteryRecommendationTest extends TestCase
             'method' => LotteryRecommendationService::METHOD_OVERDUE,
             'row_count' => 3,
             'stats_limit' => 20,
+            'reuse_strategy' => LotteryRecommendationService::REUSE_AVOID,
         ]);
 
         $lotto = $recommendations[LotteryDraw::GAME_LOTTO_6AUS49];
@@ -81,6 +82,7 @@ class LotteryRecommendationTest extends TestCase
         $this->assertCount(6, $lotto['rows'][0]['main_numbers']);
         $this->assertGreaterThanOrEqual(13, min($lotto['rows'][0]['main_numbers']));
         $this->assertSame(2, $lotto['main_stats'][0]['missed_draws']);
+        $this->assertEmpty(array_intersect($lotto['rows'][0]['main_numbers'], $lotto['rows'][1]['main_numbers']));
     }
 
     public function test_default_recommendation_method_is_rare_and_games_can_use_separate_options(): void
@@ -109,16 +111,20 @@ class LotteryRecommendationTest extends TestCase
                 'method' => LotteryRecommendationService::METHOD_RARE,
                 'row_count' => 2,
                 'stats_limit' => 10,
+                'reuse_strategy' => LotteryRecommendationService::REUSE_BALANCED,
             ],
             LotteryDraw::GAME_EUROJACKPOT => [
                 'method' => LotteryRecommendationService::METHOD_HOT,
                 'row_count' => 1,
                 'stats_limit' => 10,
+                'reuse_strategy' => LotteryRecommendationService::REUSE_ALLOW,
             ],
         ]);
 
         $this->assertSame(LotteryRecommendationService::METHOD_RARE, $recommendations[LotteryDraw::GAME_LOTTO_6AUS49]['method']);
         $this->assertSame(LotteryRecommendationService::METHOD_HOT, $recommendations[LotteryDraw::GAME_EUROJACKPOT]['method']);
+        $this->assertSame(LotteryRecommendationService::REUSE_BALANCED, $recommendations[LotteryDraw::GAME_LOTTO_6AUS49]['reuse_strategy']);
+        $this->assertSame(LotteryRecommendationService::REUSE_ALLOW, $recommendations[LotteryDraw::GAME_EUROJACKPOT]['reuse_strategy']);
         $this->assertCount(2, $recommendations[LotteryDraw::GAME_LOTTO_6AUS49]['rows']);
         $this->assertCount(1, $recommendations[LotteryDraw::GAME_EUROJACKPOT]['rows']);
     }
